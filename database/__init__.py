@@ -1,8 +1,8 @@
 import asyncio
 from config import DB_URL
-from database.db_interfaces.admins import AdminsDBInterface
 from .db_interface import BaseInterface
 from .db_interfaces.users import UsersDBInterface
+from .db_interfaces.admins import AdminsDBInterface
 
 
 class DBInterface(BaseInterface):

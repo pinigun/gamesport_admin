@@ -9,6 +9,7 @@ from sqlalchemy.orm import InstrumentedAttribute, Query, joinedload, selectinloa
 from sqlalchemy.sql.ddl import DropTable
 
 from config import DB_URL
+from database.exceptions import CustomDBExceptions
 from database.models import *
 from database.models import Base
 from loguru import logger
@@ -54,24 +55,20 @@ class BaseInterface:
             # await session.delete(records)
             await session.commit()
 
-    async def delete_rows(self, model: Any, **filter_by):
+    async def delete_rows(self, model: Base, **filter_by):
         async with self.async_ses() as session:
             records = await session.execute(Query(model).filter_by(**filter_by))
-            res = records.scalars().all()
+            records = records.scalars().all()
             
             # Если результаты найдены пробуем удалить
-            if res:
-                try:
-                    for rec in res:
-                        await session.delete(rec)
-                    # await session.delete(records)
-                    await session.commit()
-                    return True
-                except Exception:
-                    return False
-                
-            # Если резултатов нет
-            return None
+            if not records:
+                raise CustomDBExceptions(message=f'In table "{model.__tablename__}" Row is not defind with filter: {filter_by}')
+            for record in records:
+                await session.delete(record)
+            # await session.delete(records)
+            await session.commit()
+            return True
+
 
 
     async def get_rows_count(

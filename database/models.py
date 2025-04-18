@@ -2,7 +2,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import ForeignKey, String, DateTime, Boolean, Integer, Float, Enum as SqlEnum
+from sqlalchemy import CheckConstraint, ForeignKey, String, DateTime, Boolean, Integer, Float
+from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from config import DATE_FORMAT
@@ -253,21 +254,14 @@ class AdminStatuses(str, Enum):
 class Admin(Base):
     __tablename__ = 'admins'
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    first_name: Mapped[str] = mapped_column(String, nullable=False)
-    last_name: Mapped[str] = mapped_column(String, nullable=False)
-    middle_name: Mapped[str] = mapped_column(String, nullable=False)
-    email: Mapped[str] = mapped_column(String, nullable=False)
-    phone_number: Mapped[str] = mapped_column(String, nullable=False)
-    password: Mapped[str] = mapped_column(String, nullable=False)
-    
-    status: Mapped[AdminStatuses] = mapped_column(
-        SqlEnum(
-            enums=AdminStatuses,
-            name="admin_statuses",
-            create_constraint=True
-        )
-    )
+    id:             Mapped[int] = mapped_column(Integer, primary_key=True)
+    first_name:     Mapped[str] = mapped_column(String, nullable=False)
+    last_name:      Mapped[str] = mapped_column(String, nullable=False)
+    middle_name:    Mapped[str] = mapped_column(String, nullable=True)
+    email:          Mapped[str] = mapped_column(String, nullable=False)
+    phone_number:   Mapped[str] = mapped_column(String, nullable=False)
+    password:       Mapped[bytes] = mapped_column(BYTEA, nullable=False)
+    status:         Mapped[str] = mapped_column(String, nullable=False)
     
     # Связь с ролями через промежуточную таблицу admin_roles_link
     roles: Mapped[list["AdminRole"]] = relationship(
@@ -275,7 +269,14 @@ class Admin(Base):
         secondary="admin_roles_link",
         back_populates="admins"
     )
-
+    __table_args__ = (
+        CheckConstraint(
+            f"status IN ({', '.join([f'\'{status.value}\'' for status in AdminStatuses])})",
+            name='admin_status_check'
+        ),
+    )
+    
+    
 
 class AdminRole(Base):
     __tablename__ = "admin_roles"
@@ -304,8 +305,8 @@ class AdminRoleLink(Base):
     '''
     __tablename__ = "admin_roles_link"
 
-    admin_id: Mapped[int] = mapped_column(ForeignKey("admins.id"), primary_key=True)
-    role_id: Mapped[int] = mapped_column(ForeignKey("admin_roles.id"), primary_key=True)
+    admin_id: Mapped[int] = mapped_column(ForeignKey("admins.id", ondelete='CASCADE'), primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("admin_roles.id", ondelete='CASCADE'), primary_key=True)
 
 
 class AdminRolePermissions(Base):
@@ -328,5 +329,5 @@ class AdminRolePermissionLink(Base):
     '''
     __tablename__ = "admin_role_permissions_link"
 
-    role_id: Mapped[int] = mapped_column(ForeignKey("admin_roles.id"), primary_key=True)
-    permission_id: Mapped[int] = mapped_column(ForeignKey("admin_role_permissions.id"), primary_key=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("admin_roles.id", ondelete='CASCADE'), primary_key=True)
+    permission_id: Mapped[int] = mapped_column(ForeignKey("admin_role_permissions.id", ondelete='CASCADE'), primary_key=True)
