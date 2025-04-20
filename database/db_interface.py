@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Any, Iterable
 
-from sqlalchemy import Select, text, update, func, desc, asc, \
+from sqlalchemy import ColumnExpressionArgument, Select, text, update, func, desc, asc, \
     select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, Query, joinedload, selectinload
@@ -132,12 +132,13 @@ class BaseInterface:
             
             return result.scalars().first()  # Возвращаем первый элемент или None, если не найдено
     
+    
     async def get_rows(
         self,
         model: Base | tuple[InstrumentedAttribute],
         order_by='id',
         order_direction="asc",
-        filter: dict=None,
+        filter: ColumnExpressionArgument = None,
         load_relations: tuple[InstrumentedAttribute] | None = None,
         offset: int | None = None,
         limit: int | None = None,
@@ -153,7 +154,7 @@ class BaseInterface:
             
             # Добавление фильтрации, если передано
             if filter:
-                query = query.filter(filter['filter'])
+                query = query.filter(filter)
             
             # Добавление сортировки
             if order_by:

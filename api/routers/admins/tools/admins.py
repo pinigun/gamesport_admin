@@ -1,22 +1,23 @@
-import bcrypt
-from api.routers.admins.schemas import AdminRequest, AdminResponse
+import hashlib
 from database import db
+from api.routers.admins.schemas import AdminRequest, AdminResponse
 
 
 class AdminsTools:
-    def _checkpw(
-        input_password: str,
-        db_password: str
-    ):
-        return bcrypt.checkpw(input_password, db_password)
-        
-        
-    def _hashpw(password: str):
-        return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    def _hashpw(password: str) -> str:
+        return hashlib.md5(password.encode()).hexdigest()
+    
+    
+    async def delete(admin_id: int):
+        return await db.admins.delete(admin_id) 
+                
+    
+    async def get_count():
+        return await db.admins.get_count()
     
     
     async def edit(
-        admin_id: int,
+        admin_id:   int,
         admin_data: AdminRequest,
     ) -> AdminResponse:
         return AdminResponse.model_validate(
@@ -27,7 +28,10 @@ class AdminsTools:
         )
     
     
-    async def get_all(page: int, per_page: int):
+    async def get_all(
+        page:       int,
+        per_page:   int
+    ) -> list[AdminResponse]:
         return [
             AdminResponse.model_validate(admin)
             for admin in await db.admins.get_all(
@@ -35,10 +39,6 @@ class AdminsTools:
                 per_page=per_page
             )
         ]
-                
-    
-    async def get_count():
-        return await db.admins.get_count()
     
     
     async def add(admin_data: AdminRequest):
@@ -52,5 +52,3 @@ class AdminsTools:
             )
         )
         
-    async def delete(admin_id: int):
-        return await db.admins.delete(admin_id) 

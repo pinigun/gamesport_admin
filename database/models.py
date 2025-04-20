@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from config import DATE_FORMAT
+from custom_types import AdminStatuses
 
 class TypeEnum(str, Enum):
     FLOAT = 'float'
@@ -246,11 +247,6 @@ class GiveawayPrize(Base):
     giveaway_id: Mapped[int] = mapped_column(Integer)
     
     
-class AdminStatuses(str, Enum):
-    ACTIVE = 'active'
-    INACTIVE = 'inactive'    
-    
-    
 class Admin(Base):
     __tablename__ = 'admins'
     
@@ -260,7 +256,7 @@ class Admin(Base):
     middle_name:    Mapped[str] = mapped_column(String, nullable=True)
     email:          Mapped[str] = mapped_column(String, nullable=False)
     phone_number:   Mapped[str] = mapped_column(String, nullable=False)
-    password:       Mapped[bytes] = mapped_column(BYTEA, nullable=False)
+    password:       Mapped[str] = mapped_column(String, nullable=False)
     status:         Mapped[str] = mapped_column(String, nullable=False)
     
     # Связь с ролями через промежуточную таблицу admin_roles_link
@@ -269,6 +265,8 @@ class Admin(Base):
         secondary="admin_roles_link",
         back_populates="admins"
     )
+    
+    
     __table_args__ = (
         CheckConstraint(
             f"status IN ({', '.join([f'\'{status.value}\'' for status in AdminStatuses])})",
@@ -277,7 +275,6 @@ class Admin(Base):
     )
     
     
-
 class AdminRole(Base):
     __tablename__ = "admin_roles"
     
@@ -312,8 +309,9 @@ class AdminRoleLink(Base):
 class AdminRolePermissions(Base):
     __tablename__ = 'admin_role_permissions'
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str]
+    id:     Mapped[int] = mapped_column(Integer, primary_key=True)
+    name:   Mapped[str] = mapped_column(String, nullable=False)
+    tag:    Mapped[str] = mapped_column(String, nullable=False)
 
     # Связь с ролями через промежуточную таблицу admin_role_permissions_link
     roles: Mapped[list["AdminRole"]] = relationship(

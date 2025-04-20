@@ -1,12 +1,6 @@
-from enum import Enum
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
-
-
-    
-class AdminStatuses(str, Enum):
-    ACTIVE = 'active'
-    INACTIVE = 'inactive'   
+from custom_types import AdminStatuses
+from pydantic import BaseModel, ConfigDict
 
 
 class RolePermissionResponse(BaseModel):
@@ -77,3 +71,4 @@ class AdminsData(BaseModel):
     current_page: int
     
     admins: list[AdminResponse]
+    

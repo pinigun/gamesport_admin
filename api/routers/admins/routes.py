@@ -1,22 +1,28 @@
 import math
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from custom_types import PermissionsTags
+from database.exceptions import CustomDBExceptions
 
-from api.routers.admins.schemas import AdminRequest, AdminResponse, AdminsData, EditAdminRequest, RolePermissionResponse, RoleRequest
+from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from api.routers.auth.tools.auth import AuthTools
+from api.routers.admins.tools.roles import RolesTools
 from api.routers.admins.tools.admins import AdminsTools
 from api.routers.admins.tools.permissions import PermissionsTools
-from api.routers.admins.tools.roles import RolesTools
-from database.exceptions import CustomDBExceptions
+from api.routers.admins.schemas import (
+    AdminRequest, 
+    AdminResponse,
+    AdminsData,
+    EditAdminRequest,
+    RolePermissionResponse,
+    RoleRequest
+)
 
 
 router = APIRouter(
     prefix='/admins',
+    dependencies=[Depends(AuthTools.check_permissions(PermissionsTags.ADMINS))]
 )
-
-
-@router.post('/auth', tags=['Admins'])
-async def admin_auth():
-    pass
 
 
 @router.get('/', tags=['Admins'])
@@ -25,7 +31,7 @@ async def get_all_admins(
     per_page: int = 12,
 ):
     total_admins = await AdminsTools.get_count()
-    total_pages = math.ceil((total_admins - 1) / per_page)
+    total_pages = math.ceil(total_admins / per_page)
     
     return AdminsData(
         total_pages=total_pages,
@@ -77,8 +83,10 @@ async def get_all_roles():
 
 
 @router.get('/roles/permissions', tags=['Admins.Roles'])
-async def get_all_permissions() -> list[RolePermissionResponse]:
-    return await PermissionsTools.get_all()
+async def get_all_permissions(
+    roles_ids: list[int] = Query(default_factory=list)
+) -> list[RolePermissionResponse]:
+    return await PermissionsTools.get_all(roles_ids)
        
 
 @router.post('/roles/role', tags=['Admins.Roles'])

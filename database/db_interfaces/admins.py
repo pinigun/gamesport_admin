@@ -3,7 +3,7 @@ from typing import Literal
 
 from database.exceptions import AdminNotFound, PermissionsNotFound, RoleNotFound
 from database.db_interface import BaseInterface
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.orm import joinedload, selectinload
 from database.models import (
     Admin,
@@ -18,6 +18,18 @@ class AdminsDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
    
+    
+    async def get_admin(
+        self, 
+        load_roles: bool = False,
+        **filter
+    ) -> Admin:
+        return await self.get_row(
+            Admin,
+            load_relations=[Admin.roles] if load_roles else None,
+            **filter
+        )
+    
     
     async def edit(self, admin_id: int, admin_data: dict):
         async with self.async_ses() as session:
@@ -64,7 +76,7 @@ class AdminsDBInterface(BaseInterface):
     async def get_all(self, page: int, per_page: int):
         return await self.get_rows(
             Admin,
-            offset=page,
+            offset=(page - 1) * per_page,
             limit=per_page,
             load_relations=[Admin.roles]
         )
@@ -74,9 +86,27 @@ class AdminsDBInterface(BaseInterface):
         return await self.get_rows_count(Admin)
    
    
-    async def get_all_permissions(self):
-        return await self.get_rows(AdminRolePermissions)
-    
+    async def get_all_permissions(self, roles_ids: list[int], **filter):
+        if not roles_ids:
+            return await self.get_rows(
+                AdminRolePermissions,
+                **filter
+            )
+        
+        async with self.async_ses() as session:
+            permissions_ids = await session.execute(
+                select(AdminRolePermissionLink.permission_id)
+                .where(AdminRolePermissionLink.role_id.in_(roles_ids))
+            )
+            permissions_ids = permissions_ids.scalars().all()
+            
+            result = await session.execute(
+                select(AdminRolePermissions)
+                .where(AdminRolePermissions.id.in_(permissions_ids))
+                .filter_by(**filter)
+            )
+            return result.scalars().all()
+            
     
     async def get_all_roles(self):
         return await self.get_rows(
@@ -173,12 +203,6 @@ class AdminsDBInterface(BaseInterface):
             )
             new_admin = result.unique().scalar_one()
             return new_admin
-    
-    
-    async def get_all_admins(
-        self
-    ):
-        pass
-    
+        
     
     
