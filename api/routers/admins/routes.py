@@ -27,18 +27,18 @@ router = APIRouter(
 
 @router.get('/', tags=['Admins'])
 async def get_all_admins(
-    page: int = 1,
-    per_page: int = 12,
-):
+    page:       int = Query(default=1, gt=0),
+    per_page:   int = Query(default=12, gt=0, max=20)
+) -> AdminsData:
     total_admins = await AdminsTools.get_count()
     total_pages = math.ceil(total_admins / per_page)
     
     return AdminsData(
         total_pages=total_pages,
-        total_admins=total_admins,
+        total_items=total_admins,
         per_page=per_page,
         current_page=page,
-        admins = await AdminsTools.get_all(page, per_page) if total_pages else []
+        items = await AdminsTools.get_all(page, per_page) if total_pages else []
     )
 
 

@@ -1,17 +1,11 @@
-import asyncio
-from datetime import datetime, timedelta
 from typing import Any, Iterable
 
-from sqlalchemy import ColumnExpressionArgument, Select, text, update, func, desc, asc, \
+from sqlalchemy import ColumnExpressionArgument, text, update, func, desc, asc, \
     select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute, Query, joinedload, selectinload
-from sqlalchemy.sql.ddl import DropTable
-
-from config import DB_URL
 from database.exceptions import CustomDBExceptions
 from database.models import *
-from database.models import Base
 from loguru import logger
 
 

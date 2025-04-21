@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from config import DATE_FORMAT
-from custom_types import AdminStatuses
+from custom_types import AdminStatuses, FAQStatuses
 
 class TypeEnum(str, Enum):
     FLOAT = 'float'
@@ -329,3 +329,19 @@ class AdminRolePermissionLink(Base):
 
     role_id: Mapped[int] = mapped_column(ForeignKey("admin_roles.id", ondelete='CASCADE'), primary_key=True)
     permission_id: Mapped[int] = mapped_column(ForeignKey("admin_role_permissions.id", ondelete='CASCADE'), primary_key=True)
+
+
+class FAQ(Base):
+    __tablename__ = 'faq'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    question: Mapped[str] = mapped_column(String, nullable=False)
+    answer: Mapped[str] = mapped_column(String, nullable=False)
+    position: Mapped[int] = mapped_column(String, nullable=False)
+    
+    __table_args__ = (
+        CheckConstraint(
+            f"status IN ({', '.join([f'\'{status.value}\'' for status in FAQStatuses])})",
+            name='faq_status_check'
+        ),
+    )

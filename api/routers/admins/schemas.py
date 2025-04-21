@@ -65,10 +65,9 @@ class AdminResponse(BaseModel):
     
 
 class AdminsData(BaseModel):
-    total_admins: int
-    total_pages: int
-    per_page: int
-    current_page: int
+    total_items:    int
+    total_pages:    int
+    per_page:       int
+    current_page:   int
     
-    admins: list[AdminResponse]
-    
+    items:          list[AdminResponse]
