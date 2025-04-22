@@ -12,11 +12,11 @@ from database.exceptions import CustomDBExceptions
 router = APIRouter(
     tags=['FAQ'],
     prefix='/faq',
-    # dependencies=[
-    #     Depends(
-    #         AuthTools.check_permissions(PermissionsTags.FAQ)
-    #     )
-    # ]
+    dependencies=[
+        Depends(
+            AuthTools.check_permissions(PermissionsTags.FAQ)
+        )
+    ]
 )
 
 

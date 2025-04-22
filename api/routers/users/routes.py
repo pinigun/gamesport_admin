@@ -12,7 +12,7 @@ from custom_types import PermissionsTags
 router = APIRouter(
     tags=['Users'],
     prefix='/users',
-    # dependencies=[Depends(AuthTools.check_permissions(PermissionsTags.USERS))]
+    dependencies=[Depends(AuthTools.check_permissions(PermissionsTags.USERS))]
 )
 
 
