@@ -21,7 +21,7 @@ from api.routers.admins.schemas import (
 
 router = APIRouter(
     prefix='/admins',
-    dependencies=[Depends(AuthTools.check_permissions(PermissionsTags.ADMINS))]
+    # dependencies=[Depends(AuthTools.check_permissions(PermissionsTags.ADMINS))]
 )
 
 

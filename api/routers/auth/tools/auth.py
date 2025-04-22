@@ -57,7 +57,10 @@ class AuthTools:
         async def wrapper(
             credentials: HTTPAuthorizationCredentials = Depends(security)
         ):
-            token_data = JWTTools.decode_jwt(token=credentials.credentials)
+            try:
+                token_data = JWTTools.decode_jwt(token=credentials.credentials)
+            except:
+                raise HTTPException(403, detail='Invalid token')
             admin = await db.admins.get_admin(
                 load_roles=True,
                 id=token_data['admin']['id']
