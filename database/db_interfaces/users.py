@@ -258,6 +258,7 @@ class UsersDBInterface(BaseInterface):
                 gs_subscription=self._map_subs(row.lite, row.pro),
             )
     
+    
     async def get_all(
         self,
         page: int,

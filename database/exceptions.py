@@ -19,3 +19,8 @@ class PermissionsNotFound(CustomDBExceptions):
 @dataclass
 class AdminNotFound(CustomDBExceptions):
     message: str = "Admin not found"   
+
+
+@dataclass
+class FAQNotFound(CustomDBExceptions):
+    message: str = 'FAQ (id={faq_id}) not found'

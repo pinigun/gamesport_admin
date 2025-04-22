@@ -334,10 +334,11 @@ class AdminRolePermissionLink(Base):
 class FAQ(Base):
     __tablename__ = 'faq'
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    question: Mapped[str] = mapped_column(String, nullable=False)
-    answer: Mapped[str] = mapped_column(String, nullable=False)
-    position: Mapped[int] = mapped_column(String, nullable=False)
+    id:         Mapped[int] = mapped_column(Integer, primary_key=True)
+    question:   Mapped[str] = mapped_column(String, nullable=False)
+    answer:     Mapped[str] = mapped_column(String, nullable=False)
+    status:     Mapped[str] = mapped_column(String, nullable=True)
+    position:   Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     
     __table_args__ = (
         CheckConstraint(
