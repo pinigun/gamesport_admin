@@ -4,7 +4,7 @@ from .db_interface import BaseInterface
 from .db_interfaces.faq import FAQDBInterface
 from .db_interfaces.users import UsersDBInterface
 from .db_interfaces.admins import AdminsDBInterface
-from .db_interfaces.statistics import StatisticsDBInterface
+# from .db_interfaces.statistics import StatisticsDBInterface
 
 
 class DBInterface(BaseInterface):
