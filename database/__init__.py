@@ -13,7 +13,7 @@ class DBInterface(BaseInterface):
         self.faq = FAQDBInterface(session_=self.async_ses)
         self.users = UsersDBInterface(session_=self.async_ses)
         self.admins = AdminsDBInterface(session_=self.async_ses)
-        self.statistics = StatisticsDBInterface(session_=self.async_ses)
+        # self.statistics = StatisticsDBInterface(session_=self.async_ses)
     
 db = DBInterface(DB_URL)
 
