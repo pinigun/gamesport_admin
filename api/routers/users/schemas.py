@@ -28,7 +28,7 @@ class UserResponse(BaseModel):
     # Unsupported
     gs_id:              int | None = None
     completed_tasks:    int | None = None
-    referals_count:     int | None = None
+    referals_count:     int = 0
     
     model_config = ConfigDict(from_attributes=True)
     

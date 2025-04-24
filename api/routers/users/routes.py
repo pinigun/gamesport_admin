@@ -3,10 +3,11 @@ import math
 from fastapi import APIRouter, Depends, Query, HTTPException
 
 from api.routers.auth.tools.auth import AuthTools
-from api.routers.users.schemas import EditUserRequest, UserFilters, UsersData
+from api.routers.users.schemas import EditUserRequest, UserFilters, UserResponse, UsersData
 from api.routers.users.tools.users import UsersTools
 from config import FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
 from custom_types import PermissionsTags
+from database.exceptions import CustomDBExceptions
 
 
 router = APIRouter(
@@ -60,13 +61,23 @@ async def get_all_users(
     )
 
 
+@router.get('/{user_id}')
+async def get_user(user_id: int) -> UserResponse:
+    try:
+        return await UsersTools.get(user_id)
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
+
+
 @router.patch('/{user_id}')
 async def edit_user(
     user_id: int,
     user_data: EditUserRequest
-):
-    return await UsersTools.update(user_id, user_data)
-    
+) -> UserResponse:
+    try:
+        return await UsersTools.update(user_id, user_data)
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
     
 # @router.delete('/{user_id}')
 # async def delete_faq(

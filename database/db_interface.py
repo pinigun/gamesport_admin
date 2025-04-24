@@ -49,6 +49,7 @@ class BaseInterface:
             # await session.delete(records)
             await session.commit()
 
+
     async def delete_rows(self, model: Base, **filter_by):
         async with self.async_ses() as session:
             records = await session.execute(Query(model).filter_by(**filter_by))
@@ -62,7 +63,6 @@ class BaseInterface:
             # await session.delete(records)
             await session.commit()
             return True
-
 
 
     async def get_rows_count(
@@ -80,6 +80,7 @@ class BaseInterface:
             query = select(func.count()).select_from(model).filter_by(**kwargs)
             return await session.scalar(query)
 
+    
     async def get_row(
         self, 
         model: Base,

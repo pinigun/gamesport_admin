@@ -2,10 +2,11 @@ from loguru import logger
 from dataclasses import field
 from api.routers.users.schemas import EditUserRequest, UserFilters, UserResponse
 from database import db
+from database.exceptions import UserNotFound
 
 
 class UsersTools:
-    async def update(user_id: int, user_data: EditUserRequest):
+    async def update(user_id: int, user_data: EditUserRequest) -> UserResponse:
         updated_user = await db.users.update_user(
             user_id,
             user_data.model_dump()
@@ -47,3 +48,10 @@ class UsersTools:
                 **searching_filter
             )
         ]
+        
+    
+    async def get(user_id) -> UserResponse:
+        result = await db.users.get_all(page=1, per_page=1, id=user_id)
+        if not result:
+            raise UserNotFound
+        return UserResponse.model_validate(result[0])

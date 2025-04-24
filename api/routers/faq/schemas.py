@@ -14,7 +14,7 @@ class FAQResponse(BaseModel):
     question:   str
     answer:     str
     status:     FAQStatuses
-    position:    int
+    position:   int
     
     model_config = ConfigDict(from_attributes=True)
 

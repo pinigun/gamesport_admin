@@ -3,6 +3,7 @@ from datetime import datetime
 import hashlib
 from typing import Literal, TypedDict
 from sqlalchemy import and_, case, desc, distinct, exists, func, select, update
+from sqlalchemy.orm import aliased
 from database.db_interface import BaseInterface
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
@@ -19,11 +20,11 @@ class UserData(TypedDict):
     balance:            float
     giveaways_count:    int
     gs_subscription:    Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']
+    referals_count:     int = 0
     
     # Unsupported  
     gs_id:              int | None = None
     completed_tasks:    int | None = None 
-    referals_count:     int | None = None
     
 
 class UsersDBInterface(BaseInterface):
@@ -280,6 +281,16 @@ class UsersDBInterface(BaseInterface):
             ).label("balance")
 
             giveaways_count = func.count(distinct(GiveawayParticipant.id)).label("giveaways_count")
+            UserAlias = aliased(User)
+            referals_count_subquery = (
+                select(
+                    UserAlias.referrer_id,
+                    func.count(UserAlias.id).label("referals_count")
+                )
+                .group_by(UserAlias.referrer_id)
+                .alias("referals_count_subquery")
+            )
+            
             query = (
                 select(
                     User.id,
@@ -289,6 +300,7 @@ class UsersDBInterface(BaseInterface):
                     User.email,
                     balance_case,
                     giveaways_count,
+                    func.coalesce(referals_count_subquery.c.referals_count, 0).label('referals_count'),
                     UserSubscription.lite,
                     UserSubscription.pro
                 )
@@ -298,8 +310,17 @@ class UsersDBInterface(BaseInterface):
                     GiveawayParticipant, 
                     User.id == GiveawayParticipant.user_id,
                 )
-                .group_by(User.id, User.created_at, User.tg_id, User.phone, User.email,
-                        UserSubscription.lite, UserSubscription.pro)
+                .outerjoin(referals_count_subquery, referals_count_subquery.c.referrer_id == User.id)
+                .group_by(
+                    User.id, 
+                    User.created_at,
+                    User.tg_id,
+                    User.phone,
+                    User.email,
+                    UserSubscription.lite,
+                    UserSubscription.pro,
+                    referals_count_subquery.c.referals_count
+                )
             )
 
             # created_at фильтр
@@ -385,6 +406,7 @@ class UsersDBInterface(BaseInterface):
                     email=row.email,
                     balance=row.balance,
                     giveaways_count=row.giveaways_count,
+                    referals_count=row.referals_count,
                     gs_subscription=self._map_subs(row.lite, row.pro),
                 )
                 for row in rows

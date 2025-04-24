@@ -346,3 +346,13 @@ class FAQ(Base):
             name='faq_status_check'
         ),
     )
+    
+    
+class UsersStatistic(Base):
+    __tablename__ = 'users_statistic'
+
+    id:         Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id:    Mapped[int] = mapped_column(Integer, nullable=False)
+    type:       Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    
