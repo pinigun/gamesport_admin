@@ -1,7 +1,7 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.routers.statistics.schemas import StatisticFilters
+from api.routers.statistics.schemas import StatisticData, StatisticFilters
 from api.routers.statistics.tools.statistics import StatisticTools
 from config import FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
 
@@ -15,7 +15,7 @@ router = APIRouter(
 @router.get('/')
 async def get_statistics(
     filters: StatisticFilters = Depends()
-):
+) -> StatisticData:
     for field in ("datetime_end", "datetime_start"):
         attr = getattr(filters, field)
         if isinstance(attr, str):

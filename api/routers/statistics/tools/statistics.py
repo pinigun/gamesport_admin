@@ -4,7 +4,7 @@ from database import db
 
 
 class StatisticTools:
-    async def get_all(filters: StatisticFilters):
+    async def get_all(filters: StatisticFilters) -> StatisticData:
         statistics = await db.statistics.get_all_stats(**filters.model_dump())
         logger.debug(list(statistics.items())[:2])
         return StatisticData(
