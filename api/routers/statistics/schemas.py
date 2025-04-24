@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RegistrationsStatistic(BaseModel):
@@ -40,10 +40,9 @@ class DailyStatistic(BaseModel):
     
 
 class StatisticData(BaseModel):
-    data: dict[str, DailyStatistic]
-
-
-
+    data: dict[str, DailyStatistic] = Field(..., description='additionalProp* = Строка в формате "YYYY-MM-DD"')
+    
+    
 class StatisticFilters(BaseModel):   
     # Баланс
     min_balance:        Optional[int] = None
