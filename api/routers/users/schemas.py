@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationError, model_validator
 
 from config import FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
 
@@ -37,6 +37,21 @@ class UserResponse(BaseModel):
         if isinstance(value, datetime):
             return value.strftime(format=f"{FRONT_DATE_FORMAT} {FRONT_TIME_FORMAT}")
         return value
+    
+    @model_validator(mode='before')
+    def model_validate(cls, values):
+        created_at = values.get('created_at')
+        
+        # Преобразование created_at в datetime, если это строка
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at)
+        
+        # Вычисление days_in_project
+        days_in_project = (datetime.now() - created_at).days
+        
+        values['days_in_project'] = days_in_project
+        
+        return values
     
     
 class UsersData(BaseModel):
