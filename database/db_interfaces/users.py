@@ -187,26 +187,19 @@ class UsersDBInterface(BaseInterface):
                     else_=-UserBalanceHistory.amount
                 )
             ).label("balance")
-            curr_balance = await session.scalar(
-                select(balance_case)
-                .select_from(UserBalanceHistory)  # явно указываем начальную таблицу
-                .where(UserBalanceHistory.user_id == user_id)
-                .group_by(UserBalanceHistory.user_id)
-            )
-            logger.debug(curr_balance)
-            new_balance = user_data.pop('balance', None)            
-            if new_balance:
-                diff = new_balance - curr_balance
-                logger.debug(diff)
-                if diff != 0:
-                    new_history_record=UserBalanceHistory(
-                        user_id=user_id,
-                        type='IN' if diff > 0 else 'OUT',
-                        reason='Changed by administrator',
-                        amount=diff if diff > 0 else -diff,
-                        created_at=datetime.now()
-                    )
-                    session.add(new_history_record)
+            balance_transaction_amount = user_data.pop('balance', None)            
+            if balance_transaction_amount:
+                new_history_record=UserBalanceHistory(
+                    user_id=user_id,
+                    type='IN' if balance_transaction_amount > 0 else 'OUT',
+                    reason='Changed by administrator',
+                    amount=balance_transaction_amount if balance_transaction_amount > 0 else -balance_transaction_amount,
+                    created_at=datetime.now()
+                )
+                session.add(new_history_record)
+            password = user_data.pop('password', None)
+            if password:
+                user_data['hashed_password'] = hashlib.md5(password.encode()).hexdigest()
             password = user_data.pop('password', None)
             if password:
                 user_data['hashed_password'] = hashlib.md5(password.encode()).hexdigest()
