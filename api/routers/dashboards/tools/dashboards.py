@@ -3,6 +3,7 @@ from tracemalloc import start
 from typing import Literal, TypedDict
 
 from loguru import logger
+from api.routers.dashboards.schemas import GeneralStats
 from database import db
 
 
@@ -72,6 +73,6 @@ class DashboardsTools:
                         "value": value,
                         'trend': DashboardsTools._get_stat_trend(value, prev_value)
                     }
-        return period
+        return GeneralStats.model_validate(**period)
         
         
