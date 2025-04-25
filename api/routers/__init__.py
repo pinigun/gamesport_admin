@@ -5,6 +5,7 @@ from .users.routes import router as users_router
 from .admins.routes import router as admin_router
 from .faq.routes import router as faq_router
 from .statistics.routes import router as statistics_router
+from .dashboards.routes import router as dashboards_router
 
 api_router = APIRouter()
 
@@ -13,3 +14,4 @@ api_router.include_router(admin_router)
 api_router.include_router(users_router)
 api_router.include_router(faq_router)
 api_router.include_router(statistics_router)
+api_router.include_router(dashboards_router)
