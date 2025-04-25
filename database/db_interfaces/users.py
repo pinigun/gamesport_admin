@@ -289,6 +289,7 @@ class UsersDBInterface(BaseInterface):
             query = (
                 select(
                     User.id,
+                    User.gs_id,
                     User.created_at,
                     User.tg_id,
                     User.phone,
@@ -400,6 +401,7 @@ class UsersDBInterface(BaseInterface):
             return [
                 UserData(
                     id=row.id,
+                    gs_id=row.gs_id,
                     created_at=row.created_at,
                     tg_id=row.tg_id,
                     phone=row.phone,
@@ -416,6 +418,7 @@ class UsersDBInterface(BaseInterface):
     async def __get_full_user_data(self, session: AsyncSession, user: User):
         return UserData(
             id=user.id,
+            
             created_at=user.created_at,
             tg_id=user.tg_id,
             phone=user.phone,

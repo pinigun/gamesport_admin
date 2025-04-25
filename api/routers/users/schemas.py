@@ -17,6 +17,7 @@ class EditUserRequest(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    gs_id:              int | None = None
     created_at:         str | datetime
     days_in_project:    int
     tg_id:              str | None
@@ -25,11 +26,9 @@ class UserResponse(BaseModel):
     balance:            float | None = None
     giveaways_count:    int
     gs_subscription:    Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']
-    
-    # Unsupported
-    gs_id:              int | None = None
-    completed_tasks:    int | None = None
+    completed_tasks:    int = 0
     referals_count:     int = 0
+    
     
     model_config = ConfigDict(from_attributes=True)
     

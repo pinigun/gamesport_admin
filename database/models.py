@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+import os
 from typing import Any
 
 from sqlalchemy import CheckConstraint, ForeignKey, String, DateTime, Boolean, Integer, Float
@@ -25,6 +26,7 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(primary_key=True)
+    gs_id: Mapped[int] = mapped_column(Integer, nullable=True)
 
     tg_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=True)
     username: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -55,6 +57,66 @@ class User(Base):
     streamname: Mapped[str] = mapped_column(String, nullable=True, default='default')
     last_login: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     free_wheels: Mapped[int] = mapped_column(Integer, default=0)
+
+
+
+    def get_data(self):
+        return {
+            'id': self.id,
+            'tg_id': self.tg_id,
+            'username': self.username,
+            'is_admin': self.is_admin,
+            'deleted': self.deleted,
+            'timezone': self.timezone,
+            'created_at': self.created_at.strftime('%d-%m-%Y'),
+            'email': self.email,
+            'phone': self.phone,
+        }
+
+    def get_profile_username(self):
+        if self.username:
+            return self.username
+        elif self.email:
+            return self.email
+        elif self.phone:
+            return self.phone
+        else:
+            name = []
+            if self.first_name:
+                name.append(self.first_name)
+            if self.last_name:
+                name.append(self.last_name)
+            if name:
+                return ' '.join(name)
+            return 'No name'
+
+    def get_login_data(self):
+        data = {}
+        if self.phone:
+            data = {
+                'login_type': 'phone',
+                'login_value': self.phone
+            }
+        elif self.email:
+            data = {
+                'login_type': 'email',
+                'login_value': self.email
+            }
+        elif self.tg_id:
+            data = {
+                'login_type': 'telegram_id',
+                'login_value': int(self.tg_id)
+            }
+        return data
+
+    def get_photo_path(self):
+        photo_path = f'static/user_photos/{self.id}/photo'
+        base_path = f'./{photo_path}'
+        ext_list = ['jpg', 'jpeg', 'png']
+        for ext in ext_list:
+            path = f'{photo_path}.{ext}'
+            if os.path.exists(path):
+                return f'/api/{path}'
 
 
 
