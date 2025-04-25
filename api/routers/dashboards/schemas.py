@@ -1,25 +1,35 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class Trend(BaseModel):
+    trend_value:        str = "0.00 %"
+    trend_direction:    bool = True
+    
+
+class StatsParam(BaseModel):
+    value: int = 0
+    trend: Trend = Trend()
 
 
 class UserStats(BaseModel):
-    total:      int = 0
-    repeated:   int = 0
-    new:        int = 0
+    total:      StatsParam
+    repeated:   StatsParam
+    new:        StatsParam
     
     
 class RegistrationsStats(BaseModel):
-    origin:     int = 0
-    referals:   int = 0
+    origin:     StatsParam
+    referals:   StatsParam
 
 
 class TicketsStats(BaseModel):
-    received:   int = 0
-    spent:      int = 0
+    received:   StatsParam
+    spent:      StatsParam
     
 
 class TasksStats(BaseModel):
-    started:   int = 0
-    completed:      int = 0
+    started:    StatsParam = Field(default_factory=StatsParam)
+    completed:  StatsParam = Field(default_factory=StatsParam)
 
 
 class GeneralStats(BaseModel):

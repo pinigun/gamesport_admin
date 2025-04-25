@@ -73,6 +73,7 @@ class DashboardsTools:
                         "value": value,
                         'trend': DashboardsTools._get_stat_trend(value, prev_value)
                     }
-        return GeneralStats.model_validate(**period)
+                
+        return GeneralStats(**period)
         
         
