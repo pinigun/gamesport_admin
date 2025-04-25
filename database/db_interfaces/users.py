@@ -8,7 +8,7 @@ from database.db_interface import BaseInterface
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
-from database.models import GiveawayParticipant, User, UserBalanceHistory, UserSubscription
+from database.models import GiveawayParticipant, User, UserBalanceHistory, UserSubscription, UserTaskComplete
 
 
 class UserData(TypedDict):
@@ -284,6 +284,8 @@ class UsersDBInterface(BaseInterface):
                 .alias("referals_count_subquery")
             )
             
+            completed_tasks = func.count(distinct(UserTaskComplete.id)).label("completed_tasks")
+            
             query = (
                 select(
                     User.id,
@@ -293,6 +295,7 @@ class UsersDBInterface(BaseInterface):
                     User.email,
                     balance_case,
                     giveaways_count,
+                    completed_tasks,
                     func.coalesce(referals_count_subquery.c.referals_count, 0).label('referals_count'),
                     UserSubscription.lite,
                     UserSubscription.pro
@@ -302,6 +305,10 @@ class UsersDBInterface(BaseInterface):
                 .outerjoin(
                     GiveawayParticipant, 
                     User.id == GiveawayParticipant.user_id,
+                )
+                .outerjoin(
+                    UserTaskComplete, 
+                    User.id==UserTaskComplete.user_id
                 )
                 .outerjoin(referals_count_subquery, referals_count_subquery.c.referrer_id == User.id)
                 .group_by(
@@ -400,6 +407,7 @@ class UsersDBInterface(BaseInterface):
                     balance=row.balance,
                     giveaways_count=row.giveaways_count,
                     referals_count=row.referals_count,
+                    completed_tasks=row.completed_tasks, 
                     gs_subscription=self._map_subs(row.lite, row.pro),
                 )
                 for row in rows

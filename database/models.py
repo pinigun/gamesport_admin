@@ -355,4 +355,12 @@ class UsersStatistic(Base):
     user_id:    Mapped[int] = mapped_column(Integer, nullable=False)
     type:       Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    
+
+
+class UserTaskComplete(Base):
+    __tablename__ = 'user_tasks_complete'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer)
+    task_template_id: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime)    
