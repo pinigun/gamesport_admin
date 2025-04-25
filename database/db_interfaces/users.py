@@ -394,7 +394,7 @@ class UsersDBInterface(BaseInterface):
                 query
                 .offset((page - 1) * per_page)
                 .limit(per_page)
-                .order_by(User.id)
+                .order_by(User.created_at.desc())
             )
             rows = result.all()
             return [

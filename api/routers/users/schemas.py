@@ -18,6 +18,7 @@ class EditUserRequest(BaseModel):
 class UserResponse(BaseModel):
     id: int
     created_at:         str | datetime
+    days_in_project:    int
     tg_id:              str | None
     phone:              str | None
     email:              str | None
