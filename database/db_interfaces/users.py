@@ -8,7 +8,7 @@ from database.db_interface import BaseInterface
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
-from database.models import GiveawayParticipant, User, UserBalanceHistory, UserSubscription, UserTaskComplete
+from database.models import GiveawayParticipant, TaskTemplate, User, UserBalanceHistory, UserSubscription, UserTaskComplete
 
 
 class UserData(TypedDict):
@@ -252,7 +252,6 @@ class UsersDBInterface(BaseInterface):
                 gs_subscription=self._map_subs(row.lite, row.pro),
             )
     
-    
     async def get_all(
         self,
         page: int,
@@ -283,9 +282,44 @@ class UsersDBInterface(BaseInterface):
                 .group_by(UserAlias.referrer_id)
                 .alias("referals_count_subquery")
             )
-            
-            completed_tasks = func.count(distinct(UserTaskComplete.id)).label("completed_tasks")
-            
+
+            # Подсчёт фактических выполнений задач пользователем
+            user_task_completions_subq = (
+                select(
+                    UserTaskComplete.task_template_id,
+                    UserTaskComplete.user_id,
+                    func.count(UserTaskComplete.user_id).label('user_completed_count')
+                )
+                .join(TaskTemplate, TaskTemplate.id == UserTaskComplete.task_template_id)
+                .group_by(UserTaskComplete.task_template_id, UserTaskComplete.user_id)
+                .subquery()
+            )
+
+            # Дополняем данными о требуемых выполнениях
+            user_task_completion_with_requirements_subq = (
+                select(
+                    user_task_completions_subq.c.user_id,
+                    user_task_completions_subq.c.task_template_id,
+                    user_task_completions_subq.c.user_completed_count,
+                    TaskTemplate.complete_count
+                )
+                .join(TaskTemplate, TaskTemplate.id == user_task_completions_subq.c.task_template_id)
+                .subquery()
+            )
+
+            # Считаем, сколько тасок реально закрыто полностью у каждого пользователя
+            fully_completed_tasks_by_user_subq = (
+                select(
+                    user_task_completion_with_requirements_subq.c.user_id.label('user_id'),
+                    func.count(user_task_completion_with_requirements_subq.c.user_id).label('completed_tasks')
+                )
+                .where(
+                    user_task_completion_with_requirements_subq.c.user_completed_count == user_task_completion_with_requirements_subq.c.complete_count
+                )
+                .group_by(user_task_completion_with_requirements_subq.c.user_id)
+                .subquery()
+            )
+
             query = (
                 select(
                     User.id,
@@ -296,22 +330,22 @@ class UsersDBInterface(BaseInterface):
                     User.email,
                     balance_case,
                     giveaways_count,
-                    completed_tasks,
+                    func.coalesce(fully_completed_tasks_by_user_subq.c.completed_tasks, 0).label('completed_tasks'),
                     func.coalesce(referals_count_subquery.c.referals_count, 0).label('referals_count'),
                     UserSubscription.lite,
                     UserSubscription.pro
                 )
                 .outerjoin(UserBalanceHistory, User.id == UserBalanceHistory.user_id)
                 .outerjoin(UserSubscription, User.id == UserSubscription.user_id)
+                .outerjoin(GiveawayParticipant, User.id == GiveawayParticipant.user_id)
                 .outerjoin(
-                    GiveawayParticipant, 
-                    User.id == GiveawayParticipant.user_id,
+                    referals_count_subquery,  # Явное соединение с подзапросом referals_count_subquery
+                    referals_count_subquery.c.referrer_id == User.id
                 )
                 .outerjoin(
-                    UserTaskComplete, 
-                    User.id==UserTaskComplete.user_id
+                    fully_completed_tasks_by_user_subq,  # Явное соединение с подзапросом referals_count_subquery
+                    fully_completed_tasks_by_user_subq.c.user_id == User.id
                 )
-                .outerjoin(referals_count_subquery, referals_count_subquery.c.referrer_id == User.id)
                 .group_by(
                     User.id, 
                     User.created_at,
@@ -320,7 +354,8 @@ class UsersDBInterface(BaseInterface):
                     User.email,
                     UserSubscription.lite,
                     UserSubscription.pro,
-                    referals_count_subquery.c.referals_count
+                    referals_count_subquery.c.referals_count,
+                    fully_completed_tasks_by_user_subq.c.completed_tasks
                 )
             )
 
@@ -338,7 +373,6 @@ class UsersDBInterface(BaseInterface):
                 if max_balance is not None:
                     having_conditions.append(balance_case <= max_balance)
                 query = query.having(and_(*having_conditions))
-
 
             # подписка фильтр
             if gs_subscription is not None:
@@ -369,7 +403,7 @@ class UsersDBInterface(BaseInterface):
                             (UserSubscription.lite != True) & (UserSubscription.pro != True) |
                             (UserSubscription.lite.is_(None) & UserSubscription.pro.is_(None))
                         )
-            
+
             if giveway_id is not None:
                 subq = (
                     select(1)
@@ -380,23 +414,24 @@ class UsersDBInterface(BaseInterface):
                             GiveawayParticipant.giveaway_id == giveway_id
                         )
                     )
-                    .correlate(User)  # ⬅️ ВАЖНО!
+                    .correlate(User)
                 )
 
                 query = query.where(exists(subq))
-            
+
             if another_filters:
                 for key, value in another_filters.items():
                     attr = getattr(User, key, None)
                     if attr is not None:
                         query = query.where(attr == value)    
-            
+
             result = await session.execute(
                 query
                 .offset((page - 1) * per_page)
                 .limit(per_page)
                 .order_by(User.created_at.desc())
             )
+
             rows = result.all()
             return [
                 UserData(
@@ -414,6 +449,7 @@ class UsersDBInterface(BaseInterface):
                 )
                 for row in rows
             ]
+
     
     async def __get_full_user_data(self, session: AsyncSession, user: User):
         return UserData(

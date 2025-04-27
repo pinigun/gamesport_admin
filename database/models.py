@@ -23,6 +23,45 @@ class Base(DeclarativeBase):
     pass
 
 
+class TaskTemplate(Base):
+    __tablename__ = 'tasks_templates'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    target: Mapped[str] = mapped_column(String, nullable=True)
+    check_type: Mapped[str] = mapped_column(String, nullable=True)
+    title: Mapped[str] = mapped_column(String, nullable=True)
+    small_descr: Mapped[str] = mapped_column(String, nullable=True)
+    big_descr: Mapped[str] = mapped_column(String, nullable=True)
+    tickets: Mapped[int] = mapped_column(Integer, nullable=True)
+    complete_count: Mapped[int] = mapped_column(Integer, nullable=True)
+    redirect_url: Mapped[str] = mapped_column(String, nullable=True)
+    regular: Mapped[bool] = mapped_column(Boolean, default=False)
+    grade: Mapped[int] = mapped_column(Integer, nullable=True)
+    bookmaker_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=False)
+    tg_chat_id: Mapped[str] = mapped_column(String, nullable=True)
+
+    def get_data(self, complete_count=None):
+        data = {
+            'id': self.id,
+            'target': self.target,
+            'check_enable': bool(self.check_type) and self.check_type != 'auto',
+            'title': self.title,
+            'small_descr': self.small_descr,
+            'big_descr': self.big_descr.replace('\n', '</br>') if self.big_descr else None,
+            'tickets': self.tickets,
+            # 'complete_count': self.complete_count,
+            'redirect_url': self.redirect_url,
+            # 'bookmaker_id': self.bookmaker_id,
+        }
+        if self.complete_count is not None and self.complete_count > 1:
+            data.update(
+                complete=complete_count or 0,
+                expected=self.complete_count
+            )
+        return data
+
+
 class User(Base):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(primary_key=True)
