@@ -254,14 +254,15 @@ class UsersDBInterface(BaseInterface):
     
     async def get_all(
         self,
-        page: int,
-        per_page: int,
-        created_at_start: datetime = None,
-        created_at_end: datetime = None,
-        min_balance: int | None = None,
-        max_balance: int | None = None,
-        giveway_id: int | None = None,
-        gs_subscription: Literal["FULL", "LITE", "PRO", "UNSUBSCRIBED"] | None = None,
+        page:               int,
+        per_page:           int,
+        created_at_start:   datetime = None,
+        created_at_end:     datetime = None,
+        min_balance:        int | None = None,
+        max_balance:        int | None = None,
+        giveway_id:         int | None = None,
+        task_id:            int | None = None,
+        gs_subscription:    Literal["FULL", "LITE", "PRO", "UNSUBSCRIBED"] | None = None,
         **another_filters
     ) -> list[UserData]:
         async with self.async_ses() as session:
@@ -292,9 +293,10 @@ class UsersDBInterface(BaseInterface):
                 )
                 .join(TaskTemplate, TaskTemplate.id == UserTaskComplete.task_template_id)
                 .group_by(UserTaskComplete.task_template_id, UserTaskComplete.user_id)
-                .subquery()
             )
-
+            
+            # if task_id
+            
             # Дополняем данными о требуемых выполнениях
             user_task_completion_with_requirements_subq = (
                 select(

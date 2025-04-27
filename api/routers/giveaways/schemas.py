@@ -1,58 +1,37 @@
 from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-class RegistrationsStatistic(BaseModel):
-    origin_users: int = 0
-    referal_users: int = 0
+class Giveaway(BaseModel):
+    id:             int
+    start_date:     str
+    number:         int
+    period_days:    Optional[int] = None
+    name:           str
+    price:          int
+    active:         bool
+    winner_id:      Optional[int] = None
+    coalesce:       int
+    spent_tickets:  int
+    photo:          Optional[str] = None
+
+    @model_validator(mode='before')
+    def format_start_date(cls, values):
+        if 'start_date' in values:
+            start_date = values['start_date']
+            try:
+                # Форматируем в новый формат
+                values['start_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                raise ValueError(f"Invalid start_date format: {start_date}")
+        return values
 
 
-class UsersStatistic(BaseModel):
-    starts:         int = 0
-    runs:           int = 0
-    registrations:  int = 0
-    activations:    int = 0
-
-
-class TasksStatistic(BaseModel):
-    started:    int = 0
-    completed:  int = 0
+class GiveawaysData(BaseModel):
+    total_items:    int
+    total_pages:    int
+    per_page:       int
+    current_page:   int
     
-    
-class TicketsStatistic(BaseModel):
-    received:   int = 0
-    spent:      int = 0
-    purshased:  int = 0
-
-
-class GiveawaysStatistic(BaseModel):
-    primary:    int = 0
-    repeated:   int = 0
-
-
-class DailyStatistic(BaseModel):
-    registrations:  RegistrationsStatistic
-    users:          UsersStatistic
-    tasks:          TasksStatistic
-    tickets:        TicketsStatistic
-    giveaways:      GiveawaysStatistic
-    
-
-class StatisticData(BaseModel):
-    data: dict[str, DailyStatistic] = Field(..., description='additionalProp* = Строка в формате "YYYY-MM-DD"')
-    
-    
-class StatisticFilters(BaseModel):   
-    # Баланс
-    min_balance:        Optional[int] = None
-    max_balance:        Optional[int] = None
-    
-    # Конкурс
-    giveway_id:         Optional[int] = None
-    
-    # Подписка
-    gs_subscription:    Optional[Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']] = None
-    
-    datetime_start:     Optional[str|datetime] = None
-    datetime_end:       Optional[str|datetime] = None
+    items:          list[Giveaway]

@@ -31,7 +31,8 @@ class UsersTools:
     async def get_all(
         page: int,
         per_page: int,
-        filter: UserFilters
+        filter: UserFilters,
+        task_id: int | None = None
     ) -> list[UserResponse]:
         searching_fields = ("email", "phone", "tg_id")
         searching_filter = {}
@@ -44,8 +45,9 @@ class UsersTools:
             for user in await db.users.get_all(
                 page=page,
                 per_page=per_page,
+                task_id=task_id,
                 **filter.model_dump(exclude=['tg_id', "email", 'phone']),
-                **searching_filter
+                **searching_filter,
             )
         ]
         
