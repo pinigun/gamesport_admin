@@ -4,13 +4,27 @@ from typing import TypedDict
 from sqlalchemy.testing.suite import DateTest
 from database.db_interface import BaseInterface
 from database.exceptions import FAQNotFound
-from database.models import FAQ, Giveaway, GiveawayParticipant, GiveawayPrize
+from database.models import FAQ, Giveaway, GiveawayEnded, GiveawayParticipant, GiveawayPrize
 from sqlalchemy import and_, select, text, update
 
 
 class GiveawaysDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
+    
+    async def add_winner(
+        self,
+        giveaway_id: int,
+        winner_id: int,
+        prize_id: int
+    ) -> None:
+        await self.add_row(
+            GiveawayEnded,
+            giveaway_id=giveaway_id,
+            winner_id=winner_id,
+            prize_id=prize_id,
+            end_date=datetime.now()
+        )
         
         
     async def get_participtants(

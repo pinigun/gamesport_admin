@@ -8,6 +8,18 @@ from database import db
 
 
 class GiveawaysTools:
+    async def add_winner(
+        giveaway_id:    int,
+        winner_id:      int,
+        prize_id:       int
+    ):
+        await db.giveaways.add_winner(
+            giveaway_id,
+            winner_id,
+            prize_id
+        )
+    
+    
     async def get_participants(
         page: int,
         per_page: int,

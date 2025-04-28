@@ -2,6 +2,7 @@ from datetime import datetime
 import math
 from typing import Literal, Optional, Union
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import JSONResponse
 
 from api.routers.giveaways.schemas import Giveaway, GiveawaysData, GiveawaysHistoryData, GivewayParticipantsData, GivewayPrizesData
 from api.routers.giveaways.tools.giveaways import GiveawaysTools
@@ -158,9 +159,12 @@ async def get_giveaway_participtants(
 @router.post('/participants/winner')
 async def add_winner(
     giveaway_id:    int = Body(),
-    start_date:     datetime | None = Body(None),
-    end_date:       datetime | None = Body(None),
-):
-    if not any((start_date, end_date)): raise HTTPException(400, detail='Bad request: Any data should been is not none')
-    
-    return await GiveawaysTools
+    winner_id:      int = Body(),
+    prize_id:       int = Body()
+) -> JSONResponse:   
+    await GiveawaysTools.add_winner(
+        giveaway_id=giveaway_id,
+        winner_id=winner_id,
+        prize_id=prize_id
+    )
+    return JSONResponse(content={'detail': 'success'})
