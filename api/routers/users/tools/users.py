@@ -9,7 +9,7 @@ class UsersTools:
     async def update(user_id: int, user_data: EditUserRequest) -> UserResponse:
         updated_user = await db.users.update_user(
             user_id,
-            user_data.model_dump()
+            user_data.model_dump(exclude_none=True)
         )
         logger.debug(updated_user)
         return UserResponse.model_validate(updated_user)

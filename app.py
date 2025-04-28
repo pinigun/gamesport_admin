@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from api.routers import api_router
 
-app = FastAPI()
-api = FastAPI()
+app = FastAPI(debug=True)
+api = FastAPI(debug=True)
 
 api.include_router(api_router)
 
@@ -19,4 +19,4 @@ app.add_middleware(
 )
 
 if __name__ == '__main__':
-    uvicorn.run(app)
+    uvicorn.run(app, log_level='debug')
