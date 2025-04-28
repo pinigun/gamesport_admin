@@ -3,7 +3,7 @@ from enum import Enum
 import os
 from typing import Any
 
-from sqlalchemy import CheckConstraint, ForeignKey, String, DateTime, Boolean, Integer, Float
+from sqlalchemy import CheckConstraint, ForeignKey, String, DateTime, Boolean, Integer, Float, True_
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -307,6 +307,9 @@ class Giveaway(Base):
     __tablename__ = 'giveaways'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    photo: Mapped[str] = mapped_column(String, nullable=True)
+    period_days: Mapped[int] = mapped_column(Integer, nullable=True)
     streamname: Mapped[str] = mapped_column(String, nullable=True)
     price: Mapped[int] = mapped_column(Integer)
     start_date: Mapped[datetime] = mapped_column(DateTime)
