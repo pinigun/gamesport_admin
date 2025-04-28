@@ -25,7 +25,7 @@ class UserData(TypedDict):
     # Unsupported  
     gs_id:              int | None = None
     completed_tasks:    int | None = None 
-    
+    deleted:            bool
 
 class UsersDBInterface(BaseInterface):
     def __init__(self, session_):
@@ -330,6 +330,7 @@ class UsersDBInterface(BaseInterface):
                     User.tg_id,
                     User.phone,
                     User.email,
+                    User.deleted,
                     balance_case,
                     giveaways_count,
                     func.coalesce(fully_completed_tasks_by_user_subq.c.completed_tasks, 0).label('completed_tasks'),
@@ -354,6 +355,7 @@ class UsersDBInterface(BaseInterface):
                     User.tg_id,
                     User.phone,
                     User.email,
+                    User.deleted,
                     UserSubscription.lite,
                     UserSubscription.pro,
                     referals_count_subquery.c.referals_count,
@@ -448,6 +450,7 @@ class UsersDBInterface(BaseInterface):
                     referals_count=row.referals_count,
                     completed_tasks=row.completed_tasks, 
                     gs_subscription=self._map_subs(row.lite, row.pro),
+                    deleted=row.deleted
                 )
                 for row in rows
             ]

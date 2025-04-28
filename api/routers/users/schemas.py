@@ -28,6 +28,7 @@ class UserResponse(BaseModel):
     gs_subscription:    Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']
     completed_tasks:    int = 0
     referals_count:     int = 0
+    deleted:            bool
     
     
     model_config = ConfigDict(from_attributes=True)
