@@ -156,7 +156,7 @@ async def get_giveaway_participtants(
     )
     
     
-@router.post('/participants/winner')
+@router.post('/participants/winner', tags=['Giveaways.Participants'])
 async def add_winner(
     giveaway_id:    int = Body(),
     winner_id:      int = Body(),
