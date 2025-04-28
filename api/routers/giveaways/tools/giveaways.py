@@ -1,13 +1,29 @@
 from datetime import datetime
+import io
 import os
 from fastapi import UploadFile
 from loguru import logger
 from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, GiveawayParticiptant, GiveawayPrize
 from tools.photos import PhotoTools
 from database import db
+import pandas as pd
 
 
 class GiveawaysTools:
+    async def get_participants_report(data: dict) -> io.BytesIO:
+        
+        df = pd.DataFrame([row.model_dump() for row in data])
+
+        # Записываем в память (в буфер)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False)
+        output.seek(0)  # возвращаемся в начало буфера
+
+        # Отправляем как файл
+        return output
+    
+    
     async def add_winner(
         giveaway_id:    int,
         winner_id:      int,

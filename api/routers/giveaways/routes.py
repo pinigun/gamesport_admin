@@ -2,7 +2,7 @@ from datetime import datetime
 import math
 from typing import Literal, Optional, Union
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from api.routers.giveaways.schemas import Giveaway, GiveawaysData, GiveawaysHistoryData, GivewayParticipantsData, GivewayPrizesData
 from api.routers.giveaways.tools.giveaways import GiveawaysTools
@@ -131,7 +131,7 @@ async def get_giveaway_participtants(
     end_date: datetime | None = None,
     page:       int = Query(1, gt=0),
     per_page:   int = Query(10, gt=0)
-):
+) -> GivewayParticipantsData:
     if not any((start_date, end_date)): raise HTTPException(400, detail='Bad request: Any data should been is not none')
     total_items = await GiveawaysTools.get_participants_count(
         giveaway_id,
@@ -154,6 +154,32 @@ async def get_giveaway_participtants(
             giveaway_id=giveaway_id, 
             ) if total_pages else []
     )
+    
+   
+@router.get('/participants/report/{giveaway_id}', tags=['Giveaways.Participants'])
+async def get_giveaway_participtants_report(
+    giveaway_id: int,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    page:       int = Query(1, gt=0),
+    per_page:   int = Query(10, gt=0)
+) -> GivewayParticipantsData:
+    if not any((start_date, end_date)): raise HTTPException(400, detail='Bad request: Any data should been is not none')
+    participants = await GiveawaysTools.get_participants(
+        page=page, 
+        per_page=per_page,
+        start_date=start_date,
+        end_date=end_date,
+        giveaway_id=giveaway_id, 
+    )  
+    output = await GiveawaysTools.get_participants_report(participants)
+    headers = {
+        'Content-Disposition': 'attachment; filename="export.xlsx"'
+    }
+    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+    
+    
+    
     
     
 @router.post('/participants/winner', tags=['Giveaways.Participants'])
