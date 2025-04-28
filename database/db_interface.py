@@ -68,6 +68,7 @@ class BaseInterface:
     async def get_rows_count(
         self,
         model: Base,
+        filters: list = None,
         **kwargs
     ):
         '''
@@ -78,6 +79,9 @@ class BaseInterface:
         '''
         async with self.async_ses() as session:
             query = select(func.count()).select_from(model).filter_by(**kwargs)
+            if filters:
+                for filter in filters:
+                    query = query.filter(filter)
             return await session.scalar(query)
 
     
