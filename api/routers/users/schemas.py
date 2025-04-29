@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     created_at:         str | datetime
     days_in_project:    int
     tg_id:              str | None
+    username:           str | None
     phone:              str | None
     email:              str | None
     balance:            float | None = None

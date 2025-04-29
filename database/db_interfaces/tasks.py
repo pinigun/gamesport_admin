@@ -48,8 +48,10 @@ class TasksDBInterface(BaseInterface):
                 )
                 select
                 tt.id,
+                tt.created_at,
                 tt.title,
                 tt.tickets as reward,
+                tt.active as is_active,
                 coalesce(fct.fully_completed_tasks, 0) as completed,
                 coalesce(sct.started_tasks, 0) as started,
                 tt.check_type
