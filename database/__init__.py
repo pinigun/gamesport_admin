@@ -2,6 +2,7 @@ import asyncio
 from config import DB_URL
 from database.db_interfaces.dashboars import DashboardsDBInterface
 from database.db_interfaces.giveaways import GiveawaysDBInterface
+from database.db_interfaces.tasks import TasksDBInterface
 from .db_interface import BaseInterface
 from .db_interfaces.faq import FAQDBInterface
 from .db_interfaces.users import UsersDBInterface
@@ -14,10 +15,11 @@ class DBInterface(BaseInterface):
         super().__init__(db_url)
         self.faq = FAQDBInterface(session_=self.async_ses)
         self.users = UsersDBInterface(session_=self.async_ses)
+        self.tasks = TasksDBInterface(session_=self.async_ses)
         self.admins = AdminsDBInterface(session_=self.async_ses)
-        self.statistics = StatisticsDBInterface(session_=self.async_ses)
-        self.dashboards = DashboardsDBInterface(session_=self.async_ses)
         self.giveaways = GiveawaysDBInterface(session_=self.async_ses)
+        self.dashboards = DashboardsDBInterface(session_=self.async_ses)
+        self.statistics = StatisticsDBInterface(session_=self.async_ses)
     
     
 db = DBInterface(DB_URL)

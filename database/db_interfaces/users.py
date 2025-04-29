@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 import hashlib
 from typing import Literal, TypedDict
-from sqlalchemy import and_, case, desc, distinct, exists, func, select, update
+from sqlalchemy import and_, case, desc, distinct, exists, func, or_, select, update
 from sqlalchemy.orm import aliased
 from database.db_interface import BaseInterface
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -274,6 +274,7 @@ class UsersDBInterface(BaseInterface):
                     User.gs_id,
                     User.created_at,
                     User.tg_id,
+                    User.username,
                     User.phone,
                     User.email,
                     User.deleted,
@@ -299,6 +300,7 @@ class UsersDBInterface(BaseInterface):
                     User.id, 
                     User.created_at,
                     User.tg_id,
+                    User.username,
                     User.phone,
                     User.email,
                     User.deleted,
@@ -320,6 +322,7 @@ class UsersDBInterface(BaseInterface):
                 gs_id=row.gs_id,
                 created_at=row.created_at,
                 tg_id=row.tg_id,
+                username=row.username,
                 phone=row.phone,
                 email=row.email,
                 balance=row.balance,
@@ -406,6 +409,7 @@ class UsersDBInterface(BaseInterface):
                     User.gs_id,
                     User.created_at,
                     User.tg_id,
+                    User.username,
                     User.phone,
                     User.email,
                     User.deleted,
@@ -431,6 +435,7 @@ class UsersDBInterface(BaseInterface):
                     User.id, 
                     User.created_at,
                     User.tg_id,
+                    User.username,
                     User.phone,
                     User.email,
                     User.deleted,
@@ -505,7 +510,10 @@ class UsersDBInterface(BaseInterface):
                 for key, value in another_filters.items():
                     attr = getattr(User, key, None)
                     if attr is not None:
-                        query = query.where(attr == value)    
+                        if key == 'tg_id':
+                            query = query.where(or_(User.tg_id == value, User.username == value))
+                        else:
+                            query = query.where(attr == value)    
 
             result = await session.execute(
                 query
@@ -521,6 +529,7 @@ class UsersDBInterface(BaseInterface):
                     gs_id=row.gs_id,
                     created_at=row.created_at,
                     tg_id=row.tg_id,
+                    username=row.username,
                     phone=row.phone,
                     email=row.email,
                     balance=row.balance,
