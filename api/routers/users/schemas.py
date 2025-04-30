@@ -8,7 +8,7 @@ from config import FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
 
 class EditUserRequest(BaseModel):
     tg_id:              str | None = None
-    phone:              str | None = None
+    vk_id:              str | None = None
     email:              str | None = None
     balance:            float | None = None
     deleted:            bool | None = None

@@ -200,9 +200,7 @@ class UsersDBInterface(BaseInterface):
             password = user_data.pop('password', None)
             if password:
                 user_data['hashed_password'] = hashlib.md5(password.encode()).hexdigest()
-            password = user_data.pop('password', None)
-            if password:
-                user_data['hashed_password'] = hashlib.md5(password.encode()).hexdigest()
+                
                 
             row = await session.execute(
                 update(User)
