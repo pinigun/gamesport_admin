@@ -16,14 +16,14 @@ class UsersTools:
     
     
     async def get_count(filter: UserFilters) -> int:
-        searching_fields = ("email", "phone", "tg_id")
+        searching_fields = ("email", "vk_id", "tg_id")
         searching_filter = {}
         for searching_field in searching_fields:
             if getattr(filter, searching_field):
                 searching_filter[searching_field] = getattr(filter, searching_field)
                 
         return await db.users.get_filtered_count(
-            **filter.model_dump(exclude=['tg_id', "email", 'phone']),
+            **filter.model_dump(exclude=['tg_id', "email", 'vk_id']),
             **searching_filter
         ) 
         
@@ -34,7 +34,7 @@ class UsersTools:
         filter: UserFilters,
         task_id: int | None = None
     ) -> list[UserResponse]:
-        searching_fields = ("email", "phone", "tg_id")
+        searching_fields = ("email", "vk_id", "tg_id")
         searching_filter = {}
         for searching_field in searching_fields:
             if getattr(filter, searching_field):
@@ -46,7 +46,7 @@ class UsersTools:
                 page=page,
                 per_page=per_page,
                 task_id=task_id,
-                **filter.model_dump(exclude=['tg_id', "email", 'phone']),
+                **filter.model_dump(exclude=['tg_id', "email", 'vk_id']),
                 **searching_filter,
             )
         ]

@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
-from tracemalloc import start
 from typing import Literal, TypedDict
 
 from loguru import logger
-from api.routers.dashboards.schemas import GeneralStats
+from api.routers.dashboards.schemas import GeneralStats, StatsParam, TasksGraphStats, TasksStats, Trend
+from api.routers.tasks.schemas import TasksData
 from database import db
-
+import json
 
 class TrendData(TypedDict):
     trend_value: str
@@ -37,7 +37,7 @@ class DashboardsTools:
             )
 
     
-    async def get_general_stats(period: Literal['today', 'yesterday']):
+    async def get_general_stats(period: Literal['today', 'yesterday']) -> GeneralStats:
         match period:
             # Так как нам надо возвращать тренд роста, мы берем статы по двум дням и считаем прирост
             case 'today':
@@ -69,11 +69,37 @@ class DashboardsTools:
                 for section_value_key, value in section.items():
                     # Получаем значение этого же параметра из предыдущего периода
                     prev_value = result.prev_period[section_key][section_value_key]
+                    # Считаем тренд
                     period[section_key][section_value_key] = {
                         "value": value,
                         'trend': DashboardsTools._get_stat_trend(value, prev_value)
                     }
                 
         return GeneralStats(**period)
+    
+    
+    async def get_tasks_graph(start: datetime, end: datetime):
+        graph_data = [dict(record) for record in await db.dashboards.get_graph_tasks(start, end)]
+        prev_graph_data = [dict(record) for record in await db.dashboards.get_graph_tasks(start=None, end=start-timedelta(seconds=1))]
+        return [
+            TasksGraphStats(
+                id=curr_data['id'],
+                title=curr_data['title'],
+                started=StatsParam(
+                    value=curr_data['started'],
+                    trend=DashboardsTools._get_stat_trend(curr_data['started'], prev_data['started'])
+                ),
+                completed=StatsParam(
+                    value=curr_data['completed'],
+                    trend=DashboardsTools._get_stat_trend(curr_data['completed'], prev_data['completed'])
+                )
+            )
+            for curr_data, prev_data in zip(graph_data, prev_graph_data)
+        ]
         
-        
+    async def get_tickets_graph(
+        start:  datetime,
+        end:    datetime,
+        preset: Literal['received', 'spent']
+    ):
+        ...

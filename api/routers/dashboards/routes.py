@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 from fastapi import APIRouter
 
@@ -23,13 +24,24 @@ async def get_users_graph():
 
     
 @router.get("/graphs/tickets")
-async def get_tickets_graph():
-    ...
+async def get_tickets_graph(
+    start:  datetime,
+    end:    datetime,
+    preset: Literal['received', 'spent']
+):
+    return await DashboardsTools.get_tickets_graph(
+        start=start,
+        end=end,
+        preset=preset
+    )
     
     
 @router.get("/graphs/tasks")
-async def get_tasks_graph():
-    ...
+async def get_tasks_graph(
+    start: datetime,
+    end: datetime
+):
+    return await DashboardsTools.get_tasks_graph(start, end)
     
     
 @router.get("/graphs/giveaways")

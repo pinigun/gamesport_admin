@@ -62,7 +62,6 @@ class TaskTemplate(Base):
             )
         return data
 
-
 class User(Base):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -97,8 +96,8 @@ class User(Base):
     streamname: Mapped[str] = mapped_column(String, nullable=True, default='default')
     last_login: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     free_wheels: Mapped[int] = mapped_column(Integer, default=0)
-
-
+    vk_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=True)
+    
 
     def get_data(self):
         return {

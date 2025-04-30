@@ -15,7 +15,7 @@ class UserData(TypedDict):
     id:                 int
     created_at:         str | datetime
     tg_id:              str | None
-    phone:              str | None
+    vk_id:              str | None
     email:              str | None
     balance:            float
     giveaways_count:    int
@@ -275,7 +275,7 @@ class UsersDBInterface(BaseInterface):
                     User.created_at,
                     User.tg_id,
                     User.username,
-                    User.phone,
+                    User.vk_id,
                     User.email,
                     User.deleted,
                     balance_case,
@@ -301,7 +301,7 @@ class UsersDBInterface(BaseInterface):
                     User.created_at,
                     User.tg_id,
                     User.username,
-                    User.phone,
+                    User.vk_id,
                     User.email,
                     User.deleted,
                     UserSubscription.lite,
@@ -323,7 +323,7 @@ class UsersDBInterface(BaseInterface):
                 created_at=row.created_at,
                 tg_id=row.tg_id,
                 username=row.username,
-                phone=row.phone,
+                vk_id=row.vk_id,
                 email=row.email,
                 balance=row.balance,
                 giveaways_count=row.giveaways_count,
@@ -410,7 +410,7 @@ class UsersDBInterface(BaseInterface):
                     User.created_at,
                     User.tg_id,
                     User.username,
-                    User.phone,
+                    User.vk_id,
                     User.email,
                     User.deleted,
                     balance_case,
@@ -436,7 +436,7 @@ class UsersDBInterface(BaseInterface):
                     User.created_at,
                     User.tg_id,
                     User.username,
-                    User.phone,
+                    User.vk_id,
                     User.email,
                     User.deleted,
                     UserSubscription.lite,
@@ -530,7 +530,7 @@ class UsersDBInterface(BaseInterface):
                     created_at=row.created_at,
                     tg_id=row.tg_id,
                     username=row.username,
-                    phone=row.phone,
+                    vk_id=row.vk_id,
                     email=row.email,
                     balance=row.balance,
                     giveaways_count=row.giveaways_count,
@@ -541,45 +541,4 @@ class UsersDBInterface(BaseInterface):
                 )
                 for row in rows
             ]
-
-    
-    async def __get_full_user_data(self, session: AsyncSession, user: User):
-        return UserData(
-            id=user.id,
-            
-            created_at=user.created_at,
-            tg_id=user.tg_id,
-            phone=user.phone,
-            email=user.email,
-            balance=await self._get_user_balance(session, user.id),
-            giveaways_count=await self._get_giweaways_count(session, user.id),
-            gs_subscription=await self._get_gs_subscription(session, user.id)
-        )
-     
-            
-    # async def get_all(
-    #     self,
-    #     page: int,
-    #     per_page: int,
-    #     created_at_range: tuple[datetime, datetime] = None,
-    #     **filters,
-    # ) -> list[UserData]:
-    #     async with self.async_ses() as session:
-    #         query = (
-    #             select(User)
-    #             .offset((page-1) * per_page)
-    #             .limit(per_page)
-    #             .order_by(desc(User.id))
-    #         )
-            
-            
-    #         users = await session.execute(query)
-    #         users = users.scalars().all()
-            
-    #         return await asyncio.gather(
-    #             *[
-    #                 self.get_full_user_data(session, user)
-    #                 for user in users
-    #             ]
-    #         )
             

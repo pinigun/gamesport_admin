@@ -37,3 +37,10 @@ class GeneralStats(BaseModel):
     registrations:  RegistrationsStats
     tasks:          TasksStats
     tickets:        TicketsStats
+    
+
+class TasksGraphStats(BaseModel):
+    id:         int
+    title:      str
+    started:    StatsParam = Field(default_factory=StatsParam)
+    completed:  StatsParam = Field(default_factory=StatsParam)

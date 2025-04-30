@@ -22,7 +22,7 @@ class UserResponse(BaseModel):
     days_in_project:    int
     tg_id:              str | None
     username:           str | None
-    phone:              str | None
+    vk_id:              str | None
     email:              str | None
     balance:            float | None = None
     giveaways_count:    int
@@ -69,7 +69,7 @@ class UserFilters(BaseModel):
     # Поиск
     tg_id:              Optional[str] = None
     email:              Optional[str] = None
-    phone:              Optional[str] = None
+    vk_id:              Optional[str] = None
     
     # Баланс
     min_balance:        Optional[int] = None
