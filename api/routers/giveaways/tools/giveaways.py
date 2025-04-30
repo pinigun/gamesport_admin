@@ -8,7 +8,7 @@ from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, Givea
 
 
 class GiveawaysTools:
-    async def get_participants_report(data: dict) -> io.BytesIO:
+    async def get_participants_report(data: list[GiveawayParticiptant]) -> io.BytesIO:
         
         df = pd.DataFrame([row.model_dump() for row in data])
 
@@ -110,7 +110,6 @@ class GiveawaysTools:
         
         new_giveaway = await db.giveaways.add(**new_giveaway_data)
         
-        os.makedirs(f'static/giveaways/{new_giveaway.id}', exist_ok=True)
         photo_path = await PhotoTools.save_photo(path=f'static/giveaways/{new_giveaway.id}', photo=photo)
         await db.giveaways.update(
             giveaway_id=new_giveaway.id,

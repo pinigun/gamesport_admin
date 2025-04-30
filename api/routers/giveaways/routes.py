@@ -138,7 +138,6 @@ async def get_giveaway_participtants(
         start_date,
         end_date
     )
-    total_items = 1
     total_pages = math.ceil(total_items / per_page)
     
     return GivewayParticipantsData(
@@ -174,7 +173,7 @@ async def get_giveaway_participtants_report(
     )  
     output = await GiveawaysTools.get_participants_report(participants)
     headers = {
-        'Content-Disposition': 'attachment; filename="export.xlsx"'
+        'Content-Disposition': f'attachment; filename="giveaway{giveaway_id}.xlsx"'
     }
     return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
     

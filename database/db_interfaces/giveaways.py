@@ -292,10 +292,10 @@ class GiveawaysDBInterface(BaseInterface):
                 query += " WHERE g.id = :giveaway_id"
             
             query += '''
-                    ORDER BY g.id, g.active
-                    LIMIT :limit
-                    OFFSET :offset
-                    '''
+                ORDER BY g.id, g.active
+                LIMIT :limit
+                OFFSET :offset
+            '''
 
             # Параметры запроса
             params = {

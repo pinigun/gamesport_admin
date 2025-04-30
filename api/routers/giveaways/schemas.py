@@ -121,15 +121,15 @@ class Giveaway(BaseModel):
                     values['start_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     raise ValueError(f"Invalid start_date format: {start_date}")
-        if end_date:
-            try:
-                # Форматируем в новый формат
-                values['end_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                raise ValueError(f"Invalid end_date format: {end_date}")
-        photo = values.get('photo')
-        if photo is not None:
-            values['photo'] = f'{BASE_ADMIN_URL}/{photo}'
+            if end_date:
+                try:
+                    # Форматируем в новый формат
+                    values['end_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    raise ValueError(f"Invalid end_date format: {end_date}")
+            photo = values.get('photo')
+            if photo is not None:
+                values['photo'] = f'{BASE_ADMIN_URL}/{photo}'
         return values
 
 

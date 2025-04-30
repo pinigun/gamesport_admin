@@ -1,10 +1,82 @@
-from api.routers.tasks.schemas import Task, TasksData
+import io
+from jedi.inference import value
+import pandas as pd
+from api.routers.tasks.schemas import Task, TaskParticipant, TasksData
 from database import db
+from tools.photos import PhotoTools
 
 
 class TasksTools:
-    async def get_all() -> list[TasksData]:
+    async def update(
+        task_id: int,   
+        **new_task_data
+    ):
+        photo = new_task_data.pop('photo', None)
+        
+        new_task_data['active'] = new_task_data.pop('is_active')
+        new_task_data['tickets'] = new_task_data.pop('reward')
+        new_task_data['big_descr'] = new_task_data.pop('description')
+        
+        if photo:
+            new_task_data['photo'] = await PhotoTools.save_photo(path=f'static/tasks/{task_id}', photo=photo)
+
+        await db.tasks.update(
+            task_id=task_id,
+            **{key: value for key, value in new_task_data.items() if value is not None},
+        )
+        new_info = await db.tasks.get_all(page=1, per_page=1, task_id=task_id)
+        return Task(**new_info)
+    
+    
+    async def add(    
+        **new_task_data
+    ):
+        photo = new_task_data.pop('photo', None)
+        
+        new_task_data['active'] = new_task_data.pop('is_active')
+        new_task_data['tickets'] = new_task_data.pop('reward')
+        new_task_data['big_descr'] = new_task_data.pop('description')
+        
+        # Добавляем юзера чтобы получить id
+        new_task = await db.tasks.add(**new_task_data)
+        if photo:        
+            photo_path = await PhotoTools.save_photo(path=f'static/tasks/{new_task.id}', photo=photo)
+            await db.tasks.update(
+                task_id=new_task.id,
+                photo=photo_path
+            )
+        new_info = await db.tasks.get_all(page=1, per_page=1, task_id=new_task.id)
+        return Task(**new_info)
+    
+    
+    async def get_all(page: int, per_page: int) -> list[TasksData]:
         return [
             Task.model_validate(dict(task))
-            for task in await db.tasks.get_all()
+            for task in await db.tasks.get_all(page, per_page)
         ] 
+        
+    
+    async def get_count() -> int:
+        return await db.tasks.get_count()
+    
+    
+    async def get_participants(task_id: int) -> list[TaskParticipant]:
+        return [
+            TaskParticipant.model_validate(participant)
+            for participant in await db.tasks.get_participants(task_id)
+        ]
+        
+    
+    async def get_participants_report(participants: list[TaskParticipant]):     
+        df = pd.DataFrame([row.model_dump() for row in participants])
+
+        # Записываем в память (в буфер)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False)
+        output.seek(0)  # возвращаемся в начало буфера
+
+        # Отправляем как файл
+        return output
+    
+    

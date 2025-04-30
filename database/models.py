@@ -40,6 +40,7 @@ class TaskTemplate(Base):
     bookmaker_id: Mapped[int] = mapped_column(Integer, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=False)
     tg_chat_id: Mapped[str] = mapped_column(String, nullable=True)
+    photo: Mapped[str] = mapped_column(String, nullable=True)
 
     def get_data(self, complete_count=None):
         data = {
