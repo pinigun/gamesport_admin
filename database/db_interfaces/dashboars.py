@@ -1,5 +1,5 @@
 from dataclasses import field, dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal, TypedDict
 from xmlrpc.client import DateTime
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +26,109 @@ class GeneralStats:
 class DashboardsDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
+    
+    
+    async def get_giveaways_graph(
+        self,
+        start: datetime | None,
+        end: datetime
+    ):
+        async with self.async_ses() as session:
+            query = f'''
+            with giveaways_participants_subq as (
+            SELECT 
+                distinct(g.id) as giveaway_id,
+                gp.user_id,
+                gp.created_at
+            from giveaways g
+            join giveaways_participant gp on gp.giveaway_id = g.id
+            where gp.created_at <= :end {'and :start <= gp.created_at' if start else ''}
+            )
+            select g.id, g.name, coalesce(count(gps.giveaway_id), 0) as participants_count
+            from giveaways g 
+            left join giveaways_participants_subq gps on g.id = gps.giveaway_id
+            group by gps.giveaway_id, g.id, g.name
+            order by g.id
+            '''
+            params = {'end': end}
+            if start:
+                params['start'] = start
+            result = await session.execute(text(query), params=params)
+            return result.mappings().all()
+    
+    
+    async def get_users_graph(
+        self,
+        start: datetime,
+        end: datetime,
+        preset: Literal['ALL', 'NEW', 'REPEATED']
+    ):
+        match preset:
+            case 'ALL':
+                query_type = 'all_users'
+            case 'NEW':
+                query_type = 'new_users'
+            case 'REPEATED':
+                query_type = 'repeated_users'
+                
+        async with self.async_ses() as session:
+            query = f'''
+            WITH dates AS (
+                SELECT generate_series(
+                    DATE '{start}',
+                    DATE '{end}',
+                    INTERVAL '1 day'
+                )::DATE AS day
+            ),
+            new_user_ids_subq AS (
+                SELECT us.user_id, DATE(us.created_at) AS day
+                FROM users_statistic us 
+                WHERE type = 'RUN_APP'
+                AND us.created_at BETWEEN '{start}' AND '{end}'
+                GROUP BY us.user_id, day
+            ),
+            repeated_users_subq AS (
+                SELECT ds.day, tui.user_id
+                FROM dates ds
+                LEFT JOIN new_user_ids_subq tui ON ds.day = tui.day
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM users_statistic us
+                    WHERE us.user_id = tui.user_id
+                    AND us.type = 'RUN_APP'
+                    AND DATE(us.created_at) < ds.day
+                )
+            ),
+            repeated_users as (
+                SELECT ds.day, 
+                    COALESCE(COUNT(DISTINCT u.user_id), 0) AS user_count
+                FROM dates ds
+                LEFT JOIN repeated_users_subq u ON ds.day = u.day
+                GROUP BY ds.day
+                ORDER BY ds.day
+            ),
+            new_users as (
+                SELECT ds.day, 
+                    COALESCE(COUNT(DISTINCT u.user_id), 0) AS users_count
+                FROM dates ds
+                LEFT JOIN repeated_users_subq u ON ds.day = u.day
+                GROUP BY ds.day
+                ORDER BY ds.day
+            ),
+            all_users as (
+                SELECT 
+                    ds.day,
+                    COALESCE(COUNT(DISTINCT tui.user_id), 0) + COALESCE(COUNT(DISTINCT ru.user_id), 0) AS users_count
+                FROM dates ds
+                LEFT JOIN new_user_ids_subq tui ON ds.day = tui.day
+                LEFT JOIN repeated_users_subq ru ON ds.day = ru.day
+                GROUP BY ds.day
+                ORDER BY ds.day
+            )
+            select * from {query_type}
+            '''
+            result = await session.execute(text(query))
+        return result.mappings().all()            
     
     
     async def get_wheel_spins_graph(self, start: datetime, end: datetime):

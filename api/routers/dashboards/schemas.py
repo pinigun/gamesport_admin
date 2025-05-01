@@ -47,5 +47,11 @@ class TasksGraphStats(BaseModel):
     completed:  StatsParam = Field(default_factory=StatsParam)
         
     
+class GiveawaysGraphStats(BaseModel):
+    id: int
+    name: str
+    users_count: StatsParam = Field(default_factory=StatsParam)    
+    
+    
 class GraphStats(BaseModel):
     data: dict[date, StatsParam]

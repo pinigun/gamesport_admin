@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Literal, TypedDict
 
 from loguru import logger
-from api.routers.dashboards.schemas import GeneralStats, StatsParam, TasksGraphStats, TasksStats, TicketsStats, Trend
+from api.routers.dashboards.schemas import GeneralStats, GiveawaysGraphStats, StatsParam, TasksGraphStats, TasksStats, TicketsStats, Trend
 from api.routers.tasks.schemas import TasksData
 from database import db
 import json
@@ -76,6 +76,59 @@ class DashboardsTools:
                     }
                 
         return GeneralStats(**period)
+    
+    
+    async def get_giveaways_graph(
+        start: datetime,
+        end: datetime,
+    ) -> list[GiveawaysGraphStats]:
+        curr_giveaways = [dict(record) for record in await db.dashboards.get_giveaways_graph(start, end)]
+        prev_giveaways = [dict(record) for record in await db.dashboards.get_giveaways_graph(start=None, end=start-timedelta(seconds=1))]
+        return [
+            GiveawaysGraphStats(
+                id=curr_giveaway['id'],
+                name=curr_giveaway['name'],
+                users_count=StatsParam(
+                    value=curr_giveaway['participants_count'],
+                    trend=DashboardsTools._get_stat_trend(
+                        new_value=curr_giveaway['participants_count'],
+                        old_value=prev_giveaway['participants_count']
+                    )
+                )
+            )
+            for curr_giveaway, prev_giveaway in zip(curr_giveaways, prev_giveaways) 
+        ]
+    
+    
+    async def get_users_graph(
+        start: datetime,
+        end: datetime,
+        preset: Literal['ALL', 'NEW', 'REPEATED']
+    ):
+        users_graph = await db.dashboards.get_users_graph(
+            start=start,
+            end=end,
+            preset=preset
+        )
+        
+        result = dict()
+        if users_graph:
+            result[users_graph[0]['day']] = StatsParam(
+                value=users_graph[0]['users_count'],
+            )
+            result.update(**{
+                    str(users_graph[i]['day']): StatsParam(
+                        value=  int(users_graph[i]['users_count']),
+                        trend=DashboardsTools._get_stat_trend(
+                            new_value=int(users_graph[i]['users_count']),
+                            old_value=int(users_graph[i-1]['users_count'])
+                        )
+                    )
+                    for i in range(1, len(users_graph))
+                }
+            )
+        return result
+    
     
     
     async def get_wheel_spins_graph(start: datetime, end: datetime):
@@ -152,12 +205,12 @@ class DashboardsTools:
     async def get_tickets_graph(
         start:  datetime,
         end:    datetime,
-        preset: Literal['received', 'spent']
+        preset: Literal['RECEIVED', 'SPENT']
     ):
         tickets_graph = await db.dashboards.get_graph_tickets(
             start=start,
             end=end,
-            preset='IN' if preset == 'received' else 'OUT'
+            preset='IN' if preset == 'RECEIVED' else 'OUT'
         )
         result = dict()
         if tickets_graph:
