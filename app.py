@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +10,7 @@ api = FastAPI()
 
 api.include_router(api_router)
 
+os.makedirs('static', exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount('/admin_panel', api, "API")
 app.add_middleware(
