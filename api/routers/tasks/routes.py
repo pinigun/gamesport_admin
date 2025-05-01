@@ -4,7 +4,7 @@ import math
 from typing import Literal, Optional, Union
 from fastapi import APIRouter, Body, Depends, File, Form, Query, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-from api.routers.tasks.schemas import TasksData
+from api.routers.tasks.schemas import Task, TasksData
 from api.routers.tasks.tools.tasks import TasksTools
 
 
@@ -18,7 +18,7 @@ router = APIRouter(
 async def get_tasks(
     page:       int = Query(1, gt=0),
     per_page:   int = Query(10, gt=0)
-):
+) -> TasksData:
     total_items = await TasksTools.get_count()
     total_pages = math.ceil(total_items / per_page)
     
@@ -54,8 +54,7 @@ async def add_task(
     complete_count: Union[int, Literal['']] = Form('', description='Кол-во выполненных задач для завершения задания'),
     description:    str = Form(..., description='Текст задания'),
     photo:          Union[UploadFile, Literal['']] = File('')
-):
-    print(redirect_url)
+) -> Task:
     return await TasksTools.add(
         title=title,
         is_active=is_active,
@@ -79,8 +78,7 @@ async def add_task(
     complete_count: Union[int, Literal['']] = Form('', description='Кол-во выполненных задач для завершения задания'),
     description:    Union[str, Literal['']] = Form('', description='Текст задания'),
     photo:          Union[UploadFile, Literal['']] = File('')
-):
-    print(redirect_url)
+) -> Task:
     return await TasksTools.update(
         task_id =       task_id,
         title=          title if title != '' else None,

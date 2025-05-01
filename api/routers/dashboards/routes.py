@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Literal
 from fastapi import APIRouter
 
+from api.routers.dashboards.schemas import TicketsGraphStats
 from api.routers.dashboards.tools.dashboards import DashboardsTools
 
 
@@ -28,11 +29,13 @@ async def get_tickets_graph(
     start:  datetime,
     end:    datetime,
     preset: Literal['received', 'spent']
-):
-    return await DashboardsTools.get_tickets_graph(
-        start=start,
-        end=end,
-        preset=preset
+) -> TicketsGraphStats:
+    return TicketsGraphStats(
+        data=await DashboardsTools.get_tickets_graph(
+            start=start,
+            end=end,
+            preset=preset
+        )
     )
     
     

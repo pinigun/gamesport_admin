@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Literal, TypedDict
 
 from loguru import logger
-from api.routers.dashboards.schemas import GeneralStats, StatsParam, TasksGraphStats, TasksStats, Trend
+from api.routers.dashboards.schemas import GeneralStats, StatsParam, TasksGraphStats, TasksStats, TicketsStats, Trend
 from api.routers.tasks.schemas import TasksData
 from database import db
 import json
@@ -102,4 +102,26 @@ class DashboardsTools:
         end:    datetime,
         preset: Literal['received', 'spent']
     ):
-        ...
+        tickets_graph = await db.dashboards.get_graph_tickets(
+            start=start,
+            end=end,
+            preset='IN' if preset == 'received' else 'OUT'
+        )
+        result = dict()
+        if tickets_graph:
+            result[tickets_graph[0]['day']] = StatsParam(
+                value=tickets_graph[0]['total'],
+            )
+            result.update(**{
+                    str(tickets_graph[i]['day']): StatsParam(
+                        value=int(tickets_graph[i]['total']),
+                        trend=DashboardsTools._get_stat_trend(
+                            new_value=int(tickets_graph[i]['total']),
+                            old_value=int(tickets_graph[i-1]['total'])
+                        )
+                    )
+                    for i in range(1, len(tickets_graph))
+                }
+            )
+        logger.debug(result)
+        return result

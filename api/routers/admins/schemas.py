@@ -59,6 +59,7 @@ class AdminResponse(BaseModel):
     middle_name:    str | None = None
     email:          str
     phone_number:   str
+    status:         Literal['active', 'inactive']
     roles:          list[Role]
     
     model_config = ConfigDict(from_attributes=True)

@@ -1,3 +1,4 @@
+from datetime import date
 from pydantic import BaseModel, Field
 
 
@@ -44,3 +45,7 @@ class TasksGraphStats(BaseModel):
     title:      str
     started:    StatsParam = Field(default_factory=StatsParam)
     completed:  StatsParam = Field(default_factory=StatsParam)
+    
+
+class TicketsGraphStats(BaseModel):
+    data: dict[date, StatsParam]

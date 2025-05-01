@@ -1,6 +1,6 @@
 from dataclasses import field, dataclass
 from datetime import datetime
-from typing import TypedDict
+from typing import Literal, TypedDict
 from xmlrpc.client import DateTime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import user
@@ -27,6 +27,50 @@ class DashboardsDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
     
+    
+    async def get_graph_tickets(
+        self,
+        start: datetime,
+        end: datetime,
+        preset: Literal['IN', 'OUT']
+    ):
+        async with self.async_ses() as session:
+            start = start.strftime('%Y-%m-%d')
+            end = end.strftime('%Y-%m-%d')
+            query = f'''
+                WITH dates AS (
+                    SELECT generate_series(
+                        DATE '{start}',
+                        DATE '{end}',
+                        INTERVAL '1 day'
+                    )::DATE AS day
+                ),
+                balance_data AS (
+                    SELECT
+                        DATE(created_at) AS day,
+                        type,
+                        SUM(amount) AS total
+                    FROM users_balances_history
+                    WHERE type = '{preset}'
+                    AND created_at >= '{start}'
+                    AND created_at <= '{end}'
+                    GROUP BY day, type
+                )
+                SELECT
+                    d.day,
+                    COALESCE(SUM(CASE WHEN b.type = '{preset}' THEN b.total END), 0) AS total
+                FROM dates d
+                LEFT JOIN balance_data b ON d.day = b.day
+                GROUP BY d.day
+                ORDER BY d.day;
+            '''
+            
+            result = await session.execute(
+                text(query)
+            )
+            
+            return result.mappings().all()
+
     
     async def get_graph_tasks(self, start: datetime | None, end: datetime):
         async with self.async_ses() as session:

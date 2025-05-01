@@ -223,14 +223,9 @@ class UserBalanceHistory(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer)
-    # referral_id: Mapped[int] = mapped_column(Integer, nullable=True)
-    # order_id: Mapped[int] = mapped_column(Integer, nullable=True)
     type: Mapped[str] = mapped_column(String)
     reason: Mapped[str] = mapped_column(String)
     amount: Mapped[int] = mapped_column(Integer, nullable=True)
-    # referral_lvl: Mapped[int] = mapped_column(Integer, nullable=True)
-    # referral_percent: Mapped[int] = mapped_column(Integer, nullable=True)
-    # status: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
