@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import user
 from database.db_interface import BaseInterface
 from sqlalchemy import and_, exists, func, select, text
-from database.models import User, UserBalanceHistory, UsersStatistic
+from database.models import BalanceReasons, User, UserBalanceHistory, UsersStatistic
 from loguru import logger
 
 
@@ -28,6 +28,73 @@ class DashboardsDBInterface(BaseInterface):
         super().__init__(session_ = session_)
     
     
+    async def get_wheel_spins_graph(self, start: datetime, end: datetime):
+        async with self.async_ses() as session:
+            query = f'''
+            WITH dates AS (
+                SELECT generate_series(
+                    DATE '{start}',
+                    DATE '{end}',
+                    INTERVAL '1 day'
+                )::DATE AS day
+            ),
+            wheel_spins AS (
+                SELECT
+                    DATE(created_at) AS day,
+                    ubh.id wheel_spin_id
+                FROM users_balances_history ubh
+                WHERE ubh.reason in ('{BalanceReasons.wheel_spin.value}', '{BalanceReasons.wheel_spin_free.value}')
+                AND created_at >= '{start}'
+                AND created_at <= '{end}'
+            )
+            SELECT
+                d.day,
+                COALESCE(count(ws.wheel_spin_id), 0) AS wheel_spins_count
+            FROM dates d
+            LEFT JOIN wheel_spins ws ON ws.day = d.day
+            GROUP BY d.day
+            ORDER BY d.day;
+            '''     
+            
+            result = await session.execute(text(query))
+        return result.mappings().all()
+    
+    
+    async def get_referals_graph(
+        self,
+        start: datetime,
+        end: datetime
+    ):
+        async with self.async_ses() as session:
+            query = f'''
+            WITH dates AS (
+                SELECT generate_series(
+                    DATE '{start}',
+                    DATE '{end}',
+                    INTERVAL '1 day'
+                )::DATE AS day
+            ),
+            referals_data AS (
+                SELECT
+                    DATE(created_at) AS day,
+                    u.referrer_id 
+                FROM users u
+                WHERE u.referrer_id is not null
+                AND created_at >= '{start}'
+                AND created_at <= '{end}'
+            )
+            SELECT
+                d.day,
+                COALESCE(count(r.referrer_id), 0) AS referals_count
+            FROM dates d
+            LEFT JOIN referals_data r ON r.day = d.day
+            GROUP BY d.day
+            ORDER BY d.day;
+            '''
+            result = await session.execute(text(query))
+        return result.mappings().all()
+    
+    
     async def get_graph_tickets(
         self,
         start: datetime,
@@ -35,8 +102,6 @@ class DashboardsDBInterface(BaseInterface):
         preset: Literal['IN', 'OUT']
     ):
         async with self.async_ses() as session:
-            start = start.strftime('%Y-%m-%d')
-            end = end.strftime('%Y-%m-%d')
             query = f'''
                 WITH dates AS (
                     SELECT generate_series(
@@ -69,7 +134,7 @@ class DashboardsDBInterface(BaseInterface):
                 text(query)
             )
             
-            return result.mappings().all()
+        return result.mappings().all()
 
     
     async def get_graph_tasks(self, start: datetime | None, end: datetime):
@@ -134,7 +199,7 @@ class DashboardsDBInterface(BaseInterface):
             if start is not None:
                 params['start'] = start 
             result = await session.execute(text(query), params=params)
-            return result.mappings().all()
+        return result.mappings().all()
             
     
     async def _get_daily_stats(
@@ -249,7 +314,7 @@ class DashboardsDBInterface(BaseInterface):
         prev_end_date:    datetime,           
     ) -> GeneralStats:
         async with self.async_ses() as session:
-            return GeneralStats(
+            general_stats = GeneralStats(
                 period=await self._get_daily_stats(
                     session,
                     start_date,
@@ -260,4 +325,5 @@ class DashboardsDBInterface(BaseInterface):
                     prev_start_date,
                     prev_end_date 
                 )
-            )    
+            ) 
+        return general_stats   

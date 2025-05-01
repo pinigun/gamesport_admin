@@ -78,7 +78,58 @@ class DashboardsTools:
         return GeneralStats(**period)
     
     
-    async def get_tasks_graph(start: datetime, end: datetime):
+    async def get_wheel_spins_graph(start: datetime, end: datetime):
+        wheel_spins_graph = await db.dashboards.get_wheel_spins_graph(
+            start=start,
+            end=end
+        )
+        
+        result = dict()
+        if wheel_spins_graph:
+            result[wheel_spins_graph[0]['day']] = StatsParam(
+                value=wheel_spins_graph[0]['wheel_spins_count'],
+            )
+            result.update(**{
+                    str(wheel_spins_graph[i]['day']): StatsParam(
+                        value=  int(wheel_spins_graph[i]['wheel_spins_count']),
+                        trend=DashboardsTools._get_stat_trend(
+                            new_value=int(wheel_spins_graph[i]['wheel_spins_count']),
+                            old_value=int(wheel_spins_graph[i-1]['wheel_spins_count'])
+                        )
+                    )
+                    for i in range(1, len(wheel_spins_graph))
+                }
+            )
+        return result
+    
+    
+    
+    async def get_referals_graph(start: datetime, end: datetime):
+        referals_graph = await db.dashboards.get_referals_graph(
+            start=start,
+            end=end
+        )
+        
+        result = dict()
+        if referals_graph:
+            result[referals_graph[0]['day']] = StatsParam(
+                value=referals_graph[0]['referals_count'],
+            )
+            result.update(**{
+                    str(referals_graph[i]['day']): StatsParam(
+                        value=  int(referals_graph[i]['referals_count']),
+                        trend=DashboardsTools._get_stat_trend(
+                            new_value=int(referals_graph[i]['referals_count']),
+                            old_value=int(referals_graph[i-1]['referals_count'])
+                        )
+                    )
+                    for i in range(1, len(referals_graph))
+                }
+            )
+        return result
+    
+    
+    async def get_tasks_graph(start: datetime, end: datetime) -> list[TasksGraphStats]:
         graph_data = [dict(record) for record in await db.dashboards.get_graph_tasks(start, end)]
         prev_graph_data = [dict(record) for record in await db.dashboards.get_graph_tasks(start=None, end=start-timedelta(seconds=1))]
         return [
@@ -96,6 +147,7 @@ class DashboardsTools:
             )
             for curr_data, prev_data in zip(graph_data, prev_graph_data)
         ]
+        
         
     async def get_tickets_graph(
         start:  datetime,
@@ -123,5 +175,4 @@ class DashboardsTools:
                     for i in range(1, len(tickets_graph))
                 }
             )
-        logger.debug(result)
         return result

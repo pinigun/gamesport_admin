@@ -45,7 +45,7 @@ class TasksGraphStats(BaseModel):
     title:      str
     started:    StatsParam = Field(default_factory=StatsParam)
     completed:  StatsParam = Field(default_factory=StatsParam)
+        
     
-
-class TicketsGraphStats(BaseModel):
+class GraphStats(BaseModel):
     data: dict[date, StatsParam]

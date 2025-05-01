@@ -45,7 +45,7 @@ class Task(BaseModel):
         return value
     
     @field_validator("check_type", mode='before')
-    def check_type(cls, value: str | None):
+    def validate_check_type(cls, value: str | None):
         if value is not None:
             value = CHECK_TYPES_MAP[value]
         return value

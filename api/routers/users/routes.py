@@ -81,14 +81,4 @@ async def get_user(user_id: int) -> UserResponse:
         return await UsersTools.get(user_id)
     except CustomDBExceptions as ex:
         raise HTTPException(status_code=400, detail=ex.message)
-
-
-    
-    
-# @router.delete('/{user_id}')
-# async def delete_faq(
-#     user_id: int
-# ):
-#     ...
-    
     

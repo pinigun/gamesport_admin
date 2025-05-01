@@ -9,9 +9,11 @@ from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, Givea
 
 class GiveawaysTools:
     async def get_participants_report(data: list[GiveawayParticiptant]) -> io.BytesIO:
-        
-        df = pd.DataFrame([row.model_dump() for row in data])
-
+        if len(data) > 0:
+            df = pd.DataFrame([row.model_dump() for row in data])
+        else:
+            # Создаем DataFrame с колонками из Pydantic-модели
+            df = pd.DataFrame(columns=GiveawayParticiptant.model_fields.keys())
         # Записываем в память (в буфер)
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:

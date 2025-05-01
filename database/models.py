@@ -97,6 +97,7 @@ class User(Base):
     last_login: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     free_wheels: Mapped[int] = mapped_column(Integer, default=0)
     vk_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=True)
+    # vk_username: Mapped[str] = mapped_column(String, nullable=True)
     
 
     def get_data(self):
@@ -463,4 +464,25 @@ class UserTaskComplete(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer)
     task_template_id: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime)    
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    
+    
+class BalanceReasons(str, Enum):
+    welcome_bonus =             'Welcome bonus'
+    welcome_bonus_gs =          'Welcome bonus GS'
+    onboarding_complete_bonus = 'Onboarding complete bonus'
+    everyday_reward =           'Everyday reward'
+    everyday_reward_lite =      'Everyday reward (For Lite)'
+    everyday_reward_pro =       'Everyday reward (For Pro)'
+    wheel_spin =                'Wheel spin'
+    wheel_spin_free =           'Wheel spin FREE'
+    wheel_prize =               'Wheel prize'
+    take_part_giveaway =        'Take part Giveaway'
+    referrer_bonus_with_sub =   'Referrer Bonus (With subscription)'
+    referral_bonus_with_sub =   'Referral Bonus (With subscription)'
+    referrer_bonus =            'Referrer Bonus'
+    referral_bonus =            'Referral Bonus'
+    tickets_from_gs =           'Initiated by GS '
+    task_was_completed =        'Completed Task'
+        
+        

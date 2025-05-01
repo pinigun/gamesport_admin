@@ -68,7 +68,7 @@ async def add_task(
     
     
 @router.patch('/{task_id}')
-async def add_task(
+async def edit_task(
     task_id:        int,
     title:          Union[str, Literal['']] = Form('', description='Название задания'),
     is_active:      Union[bool, Literal['']] = Form('', description="Статус"),

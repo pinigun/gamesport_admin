@@ -67,9 +67,12 @@ class TasksTools:
         ]
         
     
-    async def get_participants_report(participants: list[TaskParticipant]):     
-        df = pd.DataFrame([row.model_dump() for row in participants])
-
+    async def get_participants_report(participants: list[TaskParticipant]):
+        if len(participants) > 0:    
+            df = pd.DataFrame([row.model_dump() for row in participants])
+        else:
+            # Создаем DataFrame с колонками из Pydantic-модели
+            df = pd.DataFrame(columns=TaskParticipant.model_fields.keys())
         # Записываем в память (в буфер)
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
