@@ -66,6 +66,7 @@ class TasksDBInterface(BaseInterface):
                 tt.id,
                 tt.created_at,
                 tt.title,
+                tt.big_descr as description,
                 tt.tickets as reward,
                 tt.active as is_active,
                 coalesce(fct.fully_completed_tasks, 0) as completed,

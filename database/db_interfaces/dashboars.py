@@ -464,6 +464,7 @@ class DashboardsDBInterface(BaseInterface):
             result[section_key][section_value_key] = value            
         return result
     
+    
     async def get_general_stats(
         self,
         start_date:   datetime,

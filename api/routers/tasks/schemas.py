@@ -26,15 +26,16 @@ class TaskParticipant(BaseModel):
 
 
 class Task(BaseModel):
-    id: int
-    title: str
-    reward: int
-    started: int
-    completed: int
-    check_type: str | None
-    is_active: bool
-    created_at: str
-    photo: str | None
+    id:             int
+    title:          str
+    reward:         int
+    started:        int
+    completed:      int
+    description:    str | None
+    check_type:     str | None
+    is_active:      bool
+    created_at:     str
+    photo:          str | None
 
     model_config = ConfigDict(from_attributes=True)
     

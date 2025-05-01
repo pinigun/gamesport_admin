@@ -55,6 +55,9 @@ async def add_task(
     description:    str = Form(..., description='Текст задания'),
     photo:          Union[UploadFile, Literal['']] = File('')
 ) -> Task:
+    if isinstance(complete_count, int):
+        if complete_count < 1:
+            raise HTTPException(400, detail='complete_count should been >= 1')
     return await TasksTools.add(
         title=title,
         is_active=is_active,
@@ -62,7 +65,7 @@ async def add_task(
         check_type=check_type,
         description=description,
         redirect_url=redirect_url if redirect_url != '' else None,
-        complete_count=complete_count if complete_count != '' else None,
+        complete_count=complete_count if complete_count != '' else 1,
         photo=photo if photo != '' else None
     )
     
@@ -79,6 +82,9 @@ async def edit_task(
     description:    Union[str, Literal['']] = Form('', description='Текст задания'),
     photo:          Union[UploadFile, Literal['']] = File('')
 ) -> Task:
+    if isinstance(complete_count, int):
+        if complete_count < 1:
+            raise HTTPException(400, detail='complete_count should been >= 1')
     return await TasksTools.update(
         task_id =       task_id,
         title=          title if title != '' else None,
