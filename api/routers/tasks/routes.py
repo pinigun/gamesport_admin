@@ -5,7 +5,7 @@ from typing import Literal, Optional, Union
 from fastapi import APIRouter, Body, Depends, File, Form, Query, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from api.routers.dashboards.tools.dashboards import DashboardsTools
-from api.routers.tasks.schemas import Task, TasksData
+from api.routers.tasks.schemas import SupportedGiveaway, Task, TasksData
 from api.routers.tasks.tools.tasks import TasksTools
 from database.exceptions import CustomDBExceptions
 
@@ -101,7 +101,7 @@ async def edit_task(
     
     
 @router.get('/supported_giveaways')
-async def get_supported_giveaways():
+async def get_supported_giveaways() -> list[SupportedGiveaway]:
     return await TasksTools.get_supported_giveaways()
     
     
