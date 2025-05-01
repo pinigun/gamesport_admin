@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import user
 from database.db_interface import BaseInterface
 from sqlalchemy import and_, exists, func, select, text
-from database.models import BalanceReasons, User, UserBalanceHistory, UsersStatistic
+from database.models import BalanceReasons, TaskTemplate, User, UserBalanceHistory, UserTaskComplete, UsersStatistic
 from loguru import logger
 
 
@@ -309,11 +309,11 @@ class DashboardsDBInterface(BaseInterface):
         self,
         session: AsyncSession,
         start_date: datetime,
-        end_date: DateTime
+        end_date: datetime
     ):
         ######### Регистрации
         get_registrations_stmt = lambda start_date, end_date: (
-        select(
+            select(
                 func.coalesce(func.count(User.id).filter(User.referrer_id.is_(None)), 0).label('registrations_origin'),
                 func.coalesce(func.count(User.id).filter(User.referrer_id.is_not(None)), 0).label('registrations_referals')
             )
@@ -370,16 +370,69 @@ class DashboardsDBInterface(BaseInterface):
         tickets_stmt = (
             select(
                 func.sum(UserBalanceHistory.amount)
-                    .filter(and_(UserBalanceHistory.type == 'IN'))
+                    .filter(UserBalanceHistory.type == 'IN')
                     .label("tickets_received"),
                 func.sum(UserBalanceHistory.amount)
-                    .filter(and_(UserBalanceHistory.type == 'OUT'))
+                    .filter(UserBalanceHistory.type == 'OUT')
                     .label("tickets_spent")
             )
             .select_from(UserBalanceHistory)
             .where(UserBalanceHistory.created_at.between(start_date, end_date))
+        ).subquery("tickets_stmt")
+
+
+        ############ Задачи
+
+        users_completed_tasks = (
+            select(
+                UserTaskComplete.task_template_id,
+                UserTaskComplete.user_id,
+                func.count(UserTaskComplete.user_id).label("user_completed")
             )
-        
+            .join(TaskTemplate, TaskTemplate.id == UserTaskComplete.task_template_id)
+            .where(UserTaskComplete.created_at.between(start_date, end_date))
+            .group_by(UserTaskComplete.task_template_id, UserTaskComplete.user_id)
+        ).subquery("users_completed_tasks")
+
+        tasks_count = (
+            select(
+                users_completed_tasks.c.task_template_id,
+                users_completed_tasks.c.user_id,
+                users_completed_tasks.c.user_completed,
+                TaskTemplate.complete_count
+            )
+            .join(TaskTemplate, TaskTemplate.id == users_completed_tasks.c.task_template_id)
+        ).subquery("tasks_count")
+
+        fully_completed_tasks = (
+            select(
+                tasks_count.c.task_template_id,
+                func.count(tasks_count.c.task_template_id).label("fully_completed_tasks")
+            )
+            .where(tasks_count.c.user_completed >= tasks_count.c.complete_count)
+            .group_by(tasks_count.c.task_template_id)
+        ).subquery("fully_completed_tasks")
+
+        started_tasks = (
+            select(
+                tasks_count.c.task_template_id,
+                func.count(tasks_count.c.task_template_id).label("started_tasks")
+            )
+            .where(tasks_count.c.user_completed < tasks_count.c.complete_count)
+            .group_by(tasks_count.c.task_template_id)
+        ).subquery("started_tasks")
+
+        task_stats_stmt = (
+            select(
+                func.sum(func.coalesce(fully_completed_tasks.c.fully_completed_tasks, 0)).label("tasks_completed"),
+                func.sum(func.coalesce(started_tasks.c.started_tasks, 0)).label("tasks_started")
+            )
+            .select_from(TaskTemplate)
+            .outerjoin(fully_completed_tasks, fully_completed_tasks.c.task_template_id == TaskTemplate.id)
+            .outerjoin(started_tasks, started_tasks.c.task_template_id == TaskTemplate.id)
+        ).subquery("task_stats")
+
+        ########## Финальный выбор
         period = await session.execute(
             select(
                 tickets_stmt.c.tickets_received.label("tickets_received"),
@@ -391,6 +444,9 @@ class DashboardsDBInterface(BaseInterface):
                 
                 registrations_stmt.c.registrations_referals.label('registrations_referals'),
                 registrations_stmt.c.registrations_origin.label('registrations_origin'),
+                
+                task_stats_stmt.c.tasks_completed.label("tasks_completed"),
+                task_stats_stmt.c.tasks_started.label("tasks_started")
             )
             .select_from(registrations_stmt)
         )
@@ -430,3 +486,4 @@ class DashboardsDBInterface(BaseInterface):
                 )
             ) 
         return general_stats   
+    
