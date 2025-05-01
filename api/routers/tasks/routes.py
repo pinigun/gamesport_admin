@@ -3,9 +3,11 @@ from datetime import datetime, time
 import math
 from typing import Literal, Optional, Union
 from fastapi import APIRouter, Body, Depends, File, Form, Query, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from api.routers.dashboards.tools.dashboards import DashboardsTools
 from api.routers.tasks.schemas import Task, TasksData
 from api.routers.tasks.tools.tasks import TasksTools
+from database.exceptions import CustomDBExceptions
 
 
 router = APIRouter(
@@ -96,3 +98,17 @@ async def edit_task(
         complete_count= complete_count if complete_count != '' else None,
         photo=          photo if photo != '' else None
     )
+    
+    
+@router.get('/supported_giveaways')
+async def get_supported_giveaways():
+    return await TasksTools.get_supported_giveaways()
+    
+    
+@router.delete('/{task_id}')
+async def delete_task(task_id: int):
+    try:
+        await TasksTools.delete(task_id)
+        return JSONResponse(status_code=200, content={'detail': 'Success'})
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)

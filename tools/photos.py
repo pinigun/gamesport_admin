@@ -1,4 +1,6 @@
+from asyncio import to_thread
 import os
+import shutil
 import aiofiles
 from aiofiles.os import remove, listdir
 from fastapi import UploadFile
@@ -44,3 +46,15 @@ class PhotoTools:
             async with aiofiles.open(file_path, 'wb') as f:
                 await f.write(await photo.read())
                 return file_path
+    
+    
+    async def delete(path: str):
+        """Асинхронно удаляет папку и всё её содержимое."""
+        try:
+            # shutil.rmtree не является асинхронной, оборачиваем в to_thread
+            await to_thread(shutil.rmtree, path)
+            logger.info(f"Папка успешно удалена: {path}")
+        except FileNotFoundError:
+            logger.warning(f"Папка не найдена: {path}")
+        except Exception as e:
+            logger.error(f"Ошибка при удалении папки {path}: {e}")

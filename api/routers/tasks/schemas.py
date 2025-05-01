@@ -66,3 +66,10 @@ class TasksData(BaseModel):
     current_page:   int
     
     items:          list[Task]
+    
+    
+class SupportedGiveaway(BaseModel):
+    id: int
+    name: str
+    
+    model_config = ConfigDict(from_attributes=True)

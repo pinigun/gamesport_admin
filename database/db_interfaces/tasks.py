@@ -1,13 +1,21 @@
 from database.db_interface import BaseInterface
 from sqlalchemy import text
 
-from database.models import TaskTemplate
+from database.models import Giveaway, TaskTemplate
 
 
 class TasksDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
-    
+        
+     
+    async def delete(self, task_id: int):
+        await self.delete_rows(TaskTemplate, id=task_id)   
+        
+        
+    async def get_supported_giveaways(self):
+        return await self.get_rows(Giveaway, streamname=None)
+        
     
     async def update(self, task_id: int, **new_task_data):
         return await self.update_rows(

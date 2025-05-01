@@ -1,8 +1,10 @@
 import io
+from fastapi import HTTPException
 from jedi.inference import value
 import pandas as pd
-from api.routers.tasks.schemas import Task, TaskParticipant, TasksData
+from api.routers.tasks.schemas import SupportedGiveaway, Task, TaskParticipant, TasksData
 from database import db
+from database.exceptions import CustomDBExceptions
 from tools.photos import PhotoTools
 
 
@@ -83,3 +85,13 @@ class TasksTools:
         return output
     
     
+    async def get_supported_giveaways() -> list[SupportedGiveaway]:
+        return [
+            SupportedGiveaway.model_validate(sup_giv)
+            for sup_giv in await db.tasks.get_supported_giveaways()
+        ]
+    
+    
+    async def delete(task_id):
+        await db.tasks.delete(task_id)
+        await PhotoTools.delete(path=f"static/tasks/{task_id}")

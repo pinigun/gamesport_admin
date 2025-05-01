@@ -36,6 +36,8 @@ class DashboardsTools:
                 trend_direction=True
             )
 
+
+        
     
     async def get_general_stats(period: Literal['today', 'yesterday']) -> GeneralStats:
         match period:
