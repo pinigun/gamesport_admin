@@ -32,7 +32,7 @@ class TasksDBInterface(BaseInterface):
         )
     
     
-    async def get_all(self, page: int, per_page: int, task_id: int | None = None):
+    async def get_all(self, page: int, per_page: int, task_id: int | None = None, name: str | None = None):
         async with self.async_ses() as session:
             query = '''
             with users_completed_tasks AS (
@@ -85,18 +85,22 @@ class TasksDBInterface(BaseInterface):
                 left join fully_completed_tasks fct on fct.task_template_id = tt.id 
                 left join started_tasks sct on sct.task_template_id = tt.id
             '''
+            
+            params = {'offset': (page-1)*per_page, 'limit': per_page}
             if task_id:
-                query += f' WHERE tt.id = {task_id}'
-                
+                query += f' WHERE tt.id = :task_id'
+                params['task_id'] = task_id
+            elif name:
+                query += f' WHERE tt.title ILIKE :name_pattern'
+                params['name_pattern'] = f"%{name}%"
             query += '''
                 offset :offset
                 limit :limit;
             '''
-            if task_id:
-                result = await session.execute(text(query), {'offset': (page-1)*per_page, 'limit': per_page})
-                return result.mappings().first()
-            result = await session.execute(text(query), {'offset': (page-1)*per_page, 'limit': per_page})
+            
+            result = await session.execute(text(query), params)
             return result.mappings().all()
+        
         
     async def get_count(self) -> int:
         return await self.get_rows_count(

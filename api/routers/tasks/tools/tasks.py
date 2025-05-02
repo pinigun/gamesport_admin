@@ -26,7 +26,7 @@ class TasksTools:
             task_id=task_id,
             **{key: value for key, value in new_task_data.items() if value is not None},
         )
-        new_info = await db.tasks.get_all(page=1, per_page=1, task_id=task_id)
+        new_info = (await db.tasks.get_all(page=1, per_page=1, task_id=task_id))[0]
         return Task(**new_info)
     
     
@@ -47,14 +47,19 @@ class TasksTools:
                 task_id=new_task.id,
                 photo=photo_path
             )
-        new_info = await db.tasks.get_all(page=1, per_page=1, task_id=new_task.id)
+        new_info = (await db.tasks.get_all(page=1, per_page=1, task_id=new_task.id))[0]
         return Task(**new_info)
     
     
-    async def get_all(page: int, per_page: int) -> list[TasksData]:
+    async def get_all(page: int, per_page: int, task_id: int | None, name: str | None) -> list[TasksData]:
         return [
             Task.model_validate(dict(task))
-            for task in await db.tasks.get_all(page, per_page)
+            for task in await db.tasks.get_all(
+                page=page,
+                per_page=per_page,
+                task_id=task_id,
+                name=name
+            ) 
         ] 
         
     

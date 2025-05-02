@@ -19,7 +19,9 @@ router = APIRouter(
 @router.get('/')
 async def get_tasks(
     page:       int = Query(1, gt=0),
-    per_page:   int = Query(10, gt=0)
+    per_page:   int = Query(10, gt=0),
+    task_id:    int | None = None,
+    name:       str | None = None,
 ) -> TasksData:
     total_items = await TasksTools.get_count()
     total_pages = math.ceil(total_items / per_page)
@@ -31,7 +33,9 @@ async def get_tasks(
         current_page=page,
         items = await TasksTools.get_all(
             page=page,
-            per_page=per_page
+            per_page=per_page,
+            task_id=task_id,
+            name=name
         ) if total_pages else []
     )
     

@@ -9,6 +9,7 @@ CHECK_TYPES_MAP = {
     'manual': 'Ручной',
     'gs': 'GameSport',
     'app': 'Драйвер',
+    'timer': 'Таймер'
 }   
 
 
@@ -48,7 +49,9 @@ class Task(BaseModel):
     @field_validator("check_type", mode='before')
     def validate_check_type(cls, value: str | None):
         if value is not None:
-            value = CHECK_TYPES_MAP[value]
+            value = CHECK_TYPES_MAP.get(value)
+            if not value:
+                value = '-'
         return value
     
     
