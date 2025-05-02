@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from typing import Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing import Any, Literal, Optional
+from loguru import logger
+from pydantic import BaseModel, ConfigDict, model_validator
 from database.models import Giveaway as GivewayDBModel
-
+import json
 from config import BASE_ADMIN_URL
 
 
@@ -78,10 +79,6 @@ class GiveawayHistoryRecord(BaseModel):
                     values['end_date'] = datetime.strftime(end_date, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     raise ValueError(f"Invalid end_date format: {end_date}")
-            
-            photo = values.get('photo')
-            if photo is not None:
-                values['photo'] = f'{BASE_ADMIN_URL}/{photo}'
         return values
 
 
@@ -96,8 +93,7 @@ class Giveaway(BaseModel):
     winner_id:          Optional[int] = None
     participants_count: int = 0
     spent_tickets:      int = 0
-    photo:              Optional[str] = None
-   
+    
     model_config = ConfigDict(from_attributes=True, extra='allow')
 
     @model_validator(mode='before')
@@ -110,8 +106,6 @@ class Giveaway(BaseModel):
                     values.start_date = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     raise ValueError(f"Invalid start_date format: {start_date}")
-            if values.photo is not None:
-                values.photo = f'{BASE_ADMIN_URL}/{values.photo}'
         elif isinstance(values, dict):
             start_date = values.get('start_date')
             end_date = values.get("end_date")
@@ -127,9 +121,18 @@ class Giveaway(BaseModel):
                     values['end_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     raise ValueError(f"Invalid end_date format: {end_date}")
-            photo = values.get('photo')
-            if photo is not None:
-                values['photo'] = f'{BASE_ADMIN_URL}/{photo}'
+        return values
+
+
+class PrizesData(BaseModel):
+    name:               str
+    border_color_hex:   str
+    
+    @model_validator(mode='before')
+    def validation(cls, values):
+        if isinstance(values, str):
+            values = json.loads(values)
+            logger.debug(values)
         return values
 
 

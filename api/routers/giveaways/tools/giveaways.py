@@ -1,10 +1,13 @@
+import asyncio
 import io
 import os
+from fastapi import UploadFile
+from loguru import logger
 import pandas as pd
 from database import db
 from datetime import datetime
 from tools.photos import PhotoTools
-from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, GiveawayParticiptant, GiveawayPrize
+from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, GiveawayParticiptant, GiveawayPrize, PrizesData
 
 
 class GiveawaysTools:
@@ -107,15 +110,24 @@ class GiveawaysTools:
     #     return Giveaway(**new_info)
     
     
-    async def add(**new_giveaway_data):
-        photo = new_giveaway_data.pop('photo', None)
-        
+    async def add(**new_giveaway_data) -> Giveaway:
+        prizes_data: list[PrizesData] = new_giveaway_data.pop('prizes_data')
+        prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
         new_giveaway = await db.giveaways.add(**new_giveaway_data)
         
-        photo_path = await PhotoTools.save_photo(path=f'static/giveaways/{new_giveaway.id}', photo=photo)
-        await db.giveaways.update(
+        photos_paths = await asyncio.gather(
+            *[
+                PhotoTools.save_photo(path=f'static/giveaways/{new_giveaway.id}', photo=photo)
+                for photo in prizes_photos
+            ]
+        )
+        for i, prize_data in enumerate(prizes_data):
+            prize_data = prize_data.model_dump()
+            prize_data['photo'] = photos_paths[i]
+            prizes_data[i] = prize_data
+        await db.giveaways.add_prizes(
             giveaway_id=new_giveaway.id,
-            photo=photo_path
+            prizes_data=prizes_data
         )
         new_info = await db.giveaways.get_all(giveaway_id=new_giveaway.id)
         return Giveaway(**new_info)
@@ -136,9 +148,11 @@ class GiveawaysTools:
     
     
     async def get(giveaway_id: int) -> Giveaway:
-        return Giveaway.model_validate(dict(
-            await db.giveaways.get_all(giveaway_id=giveaway_id)
-        ))
+        return Giveaway.model_validate(
+            dict(
+                await db.giveaways.get_all(giveaway_id=giveaway_id)
+            )
+        )
     
     
     async def get_all(

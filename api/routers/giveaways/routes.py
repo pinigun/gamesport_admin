@@ -1,14 +1,15 @@
 from datetime import datetime
 import math
-from typing import Literal, Optional, Union
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from typing import Literal, Union
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
+from loguru import logger
 
-from api.routers.giveaways.schemas import Giveaway, GiveawaysData, GiveawaysHistoryData, GivewayParticipantsData, GivewayPrizesData
+from api.routers.giveaways.schemas import Giveaway, GiveawaysData, GiveawaysHistoryData, GivewayParticipantsData, GivewayPrizesData, PrizesData
 from api.routers.giveaways.tools.giveaways import GiveawaysTools
-from api.routers.statistics.schemas import StatisticData, StatisticFilters
 from api.routers.statistics.tools.statistics import StatisticTools
-from config import FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
+from config import DATE_FORMAT, FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
+from database.exceptions import CustomDBExceptions
 
 
 router = APIRouter(
@@ -35,20 +36,23 @@ async def get_giveaways(
     
 @router.post('/giveaway', tags=['Giveaways'])
 async def add_giveaway(
+    prizes_photos:  list[UploadFile],
+    prizes_data:    str | list[PrizesData],
     name:           str = Form(),
     active:         bool = Form(True),
-    start_date:     datetime = Form(),
+    start_date:     str = Form(..., description=f'YYYY-MM-DD hh:mm:ss'),
     period_days:    int = Form(),
     price:          int = Form(),
-    photo:          UploadFile = File(None),
 ) -> Giveaway:
+    '''Ручка добавления конкурсов, фото добав'''
     return await GiveawaysTools.add(
         name=name,
         active=active,
         start_date=start_date,
         period_days=period_days,
         price=price,
-        photo=photo
+        prizes_data=prizes_data,
+        prizes_photos=prizes_photos
     )
     
 
@@ -62,15 +66,18 @@ async def add_giveaway(
     price:          Union[int, Literal['']] = Form(''),
     photo:          Union[UploadFile, Literal['']] = File(None)
 ) -> Giveaway:
-    return await GiveawaysTools.update(
-        giveaway_id=giveaway_id,
-        name=       name        if name not in (None, '') else None,
-        active=     active      if active not in (None, '') else None,
-        start_date= start_date  if start_date not in (None, '') else None,
-        period_days=period_days if period_days not in (None, '') else None,
-        price=      price       if price not in (None, '') else None,
-        photo=      photo       if photo not in (None, '') else None
-    )
+    try:
+        return await GiveawaysTools.update(
+            giveaway_id=giveaway_id,
+            name=       name        if name not in (None, '') else None,
+            active=     active      if active not in (None, '') else None,
+            start_date= start_date  if start_date not in (None, '') else None,
+            period_days=period_days if period_days not in (None, '') else None,
+            price=      price       if price not in (None, '') else None,
+            photo=      photo       if photo not in (None, '') else None
+        )
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
 
 
 @router.get('/history', tags=['Giveaways.History'])
@@ -94,7 +101,10 @@ async def get_giveaways_history(
 async def get_giveaway(
     giveaway_id: int
 ) -> Giveaway:
-    return await GiveawaysTools.get(giveaway_id=giveaway_id)
+    try:
+        return await GiveawaysTools.get(giveaway_id=giveaway_id)
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
 
 
 @router.post('/prizes/{giveaway_id}', tags=['Giveaways.Prizes'])
@@ -103,7 +113,10 @@ async def add_prizes(
     name:   list[str] = Form(),
     photo:  list[UploadFile] = File()
 ):
-    return await GiveawaysTools.add_prize(giveaway_id, name, photo)
+    try:
+        return await GiveawaysTools.add_prize(giveaway_id, name, photo)
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
 
 
 @router.get('/prizes/{giveaway_id}', tags=['Giveaways.Prizes'])
@@ -112,16 +125,19 @@ async def get_prizes(
     page:       int = Query(1, gt=0),
     per_page:   int = Query(10, gt=0)
 ) -> GivewayPrizesData:
-    total_admins = await GiveawaysTools.get_prizes_count(giveaway_id)
-    total_pages = math.ceil(total_admins / per_page)
-    
-    return GivewayPrizesData(
-        total_pages=total_pages,
-        total_items=total_admins,
-        per_page=per_page,
-        current_page=page,
-        items = await GiveawaysTools.get_prizes(giveaway_id=giveaway_id, page=page, per_page=per_page) if total_pages else []
-    )
+    try:
+        total_admins = await GiveawaysTools.get_prizes_count(giveaway_id)
+        total_pages = math.ceil(total_admins / per_page)
+        
+        return GivewayPrizesData(
+            total_pages=total_pages,
+            total_items=total_admins,
+            per_page=per_page,
+            current_page=page,
+            items = await GiveawaysTools.get_prizes(giveaway_id=giveaway_id, page=page, per_page=per_page) if total_pages else []
+        )
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
 
 
 @router.get('/participants/{giveaway_id}', tags=['Giveaways.Participants'])
@@ -132,28 +148,34 @@ async def get_giveaway_participtants(
     page:       int = Query(1, gt=0),
     per_page:   int = Query(10, gt=0)
 ) -> GivewayParticipantsData:
-    if not any((start_date, end_date)): raise HTTPException(400, detail='Bad request: Any data should been is not none')
-    total_items = await GiveawaysTools.get_participants_count(
-        giveaway_id,
-        start_date,
-        end_date
-    )
-    total_pages = math.ceil(total_items / per_page)
+    if not any((start_date, end_date)): 
+        raise HTTPException(400, detail='Bad request: Any data should been is not none')
     
-    return GivewayParticipantsData(
-        total_pages=total_pages,
-        total_items=total_items,
-        per_page=per_page,
-        current_page=page,
-        items = await GiveawaysTools.get_participants(
-            page=page, 
+    
+    try:
+        total_items = await GiveawaysTools.get_participants_count(
+            giveaway_id,
+            start_date,
+            end_date
+        )
+        total_pages = math.ceil(total_items / per_page)
+        
+        return GivewayParticipantsData(
+            total_pages=total_pages,
+            total_items=total_items,
             per_page=per_page,
-            start_date=start_date,
-            end_date=end_date,
-            giveaway_id=giveaway_id, 
-            ) if total_pages else []
-    )
-    
+            current_page=page,
+            items = await GiveawaysTools.get_participants(
+                page=page, 
+                per_page=per_page,
+                start_date=start_date,
+                end_date=end_date,
+                giveaway_id=giveaway_id, 
+                ) if total_pages else []
+        )
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)
+   
    
 @router.get('/participants/report/{giveaway_id}', tags=['Giveaways.Participants'])
 async def get_giveaway_participtants_report(
@@ -163,20 +185,23 @@ async def get_giveaway_participtants_report(
     page:       int = Query(1, gt=0),
     per_page:   int = Query(10, gt=0)
 ) -> GivewayParticipantsData:
-    if not any((start_date, end_date)): raise HTTPException(400, detail='Bad request: Any data should been is not none')
-    participants = await GiveawaysTools.get_participants(
-        page=page, 
-        per_page=per_page,
-        start_date=start_date,
-        end_date=end_date,
-        giveaway_id=giveaway_id, 
-    )  
-    output = await GiveawaysTools.get_participants_report(participants)
-    headers = {
-        'Content-Disposition': f'attachment; filename="giveaway{giveaway_id}.xlsx"'
-    }
-    return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
-    
+    if not any((start_date, end_date)): 
+        raise HTTPException(400, detail='Bad request: Any data should been is not none')
+    try:
+        participants = await GiveawaysTools.get_participants(
+            page=page, 
+            per_page=per_page,
+            start_date=start_date,
+            end_date=end_date,
+            giveaway_id=giveaway_id, 
+        )  
+        output = await GiveawaysTools.get_participants_report(participants)
+        headers = {
+            'Content-Disposition': f'attachment; filename="giveaway{giveaway_id}.xlsx"'
+        }
+        return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)    
     
     
     
@@ -186,10 +211,13 @@ async def add_winner(
     giveaway_id:    int = Body(),
     winner_id:      int = Body(),
     prize_id:       int = Body()
-) -> JSONResponse:   
-    await GiveawaysTools.add_winner(
-        giveaway_id=giveaway_id,
-        winner_id=winner_id,
-        prize_id=prize_id
-    )
-    return JSONResponse(content={'detail': 'success'})
+) -> JSONResponse:
+    try:
+        await GiveawaysTools.add_winner(
+            giveaway_id=giveaway_id,
+            winner_id=winner_id,
+            prize_id=prize_id
+        )
+        return JSONResponse(content={'detail': 'success'})
+    except CustomDBExceptions as ex:
+        raise HTTPException(status_code=400, detail=ex.message)

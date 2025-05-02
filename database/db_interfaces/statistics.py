@@ -78,8 +78,8 @@ class StatisticsDBInterface(BaseInterface):
                     case 'UNSUBSCRIBED':
                         user_filters.append(and_(UserSubscription.lite.is_(False), UserSubscription.pro.is_(False)))
             logger.debug('4')
-            if giveway_id:
-                balance_filters.append(UserBalanceHistory.giveaway_id == giveway_id)
+            # if giveway_id:
+            #     balance_filters.append(UserBalanceHistory.giveaway_id == giveway_id)
 
                 
             logger.debug('Регистрейшн запрос')
@@ -163,6 +163,8 @@ class StatisticsDBInterface(BaseInterface):
                     # Билеты
                     func.coalesce(tickets_stmt.c.tickets_received, 0).label('tickets_received'),
                     func.coalesce(tickets_stmt.c.tickets_spent, 0).label('tickets_spent')
+                    
+                    
                     
                 )
                 .join(tickets_stmt, registrations_stmt.c.date == tickets_stmt.c.date)

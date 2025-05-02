@@ -12,6 +12,19 @@ class GiveawaysDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
     
+    
+    async def add_prizes(self, giveaway_id: int, prizes_data: list[dict]):
+        await self.add_rows(
+            models=[
+                GiveawayPrize(
+                    giveaway_id=giveaway_id,
+                    **prize_data
+                )
+                for prize_data in prizes_data
+            ]
+        )
+    
+    
     async def add_winner(
         self,
         giveaway_id: int,
@@ -317,7 +330,7 @@ class GiveawaysDBInterface(BaseInterface):
                 result["prizes"] = [dict(row) for row in (await session.execute(
                     text(
                         '''
-                        SELECT id, name, photo FROM giveaways_prizes g
+                        SELECT id, name FROM giveaways_prizes g
                         WHERE g.giveaway_id = :giveaway_id
                         '''
                     ),

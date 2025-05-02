@@ -71,19 +71,26 @@ class TasksDBInterface(BaseInterface):
                         uct.task_template_id 
                 )
                 select
-                tt.id,
-                tt.created_at,
-                tt.title,
-                tt.big_descr as description,
-                tt.tickets as reward,
-                tt.active as is_active,
-                coalesce(fct.fully_completed_tasks, 0) as completed,
-                coalesce(sct.started_tasks, 0) as started,
-                tt.check_type,
-                tt.photo
-                from tasks_templates tt
-                left join fully_completed_tasks fct on fct.task_template_id = tt.id 
-                left join started_tasks sct on sct.task_template_id = tt.id
+                    tt.id,
+                    tt.created_at,
+                    tt.title,
+                    tt.big_descr as description,
+                    tt.tickets as reward,
+                    tt.active as is_active,
+                    coalesce(fct.fully_completed_tasks, 0) as completed,
+                    coalesce(sct.started_tasks, 0) as started,
+                    tt.check_type,
+                    tt.photo
+                from 
+                    tasks_templates tt
+                left join 
+                    fully_completed_tasks fct 
+                    on 
+                    fct.task_template_id = tt.id 
+                left join 
+                    started_tasks sct 
+                    on 
+                    sct.task_template_id = tt.id
             '''
             
             params = {'offset': (page-1)*per_page, 'limit': per_page}
