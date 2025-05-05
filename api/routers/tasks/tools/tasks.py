@@ -19,7 +19,8 @@ class TasksTools:
         new_task_data['active'] = new_task_data.pop('is_active')
         new_task_data['tickets'] = new_task_data.pop('reward')
         new_task_data['big_descr'] = new_task_data.pop('description')
-        if new_task_data['timer']:
+        new_task_data['timer_value'] = new_task_data.pop('timer')
+        if new_task_data['timer_value'] :
             hours, minutes, seconds = map(int, new_task_data.pop('timer').split(':'))
             new_task_data['timer_value'] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
         
