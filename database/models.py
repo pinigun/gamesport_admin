@@ -23,6 +23,15 @@ class Base(DeclarativeBase):
     pass
 
 
+class UserTaskParticipant(Base):
+    __tablename__ = 'user_tasks_participants'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer)
+    task_template_id: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class TaskTemplate(Base):
     __tablename__ = 'tasks_templates'
 

@@ -49,7 +49,7 @@ class StatisticFilters(BaseModel):
     max_balance:        Optional[int] = None
     
     # Конкурс
-    giveway_id:         Optional[int] = None
+    giveaway_id:         Optional[int] = None
     
     # Подписка
     gs_subscription:    Optional[Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']] = None

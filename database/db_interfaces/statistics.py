@@ -2,8 +2,11 @@ import asyncio
 from typing import Literal, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
-from database.models import FAQ, User, UserBalanceHistory, UserSubscription, UsersStatistic, datetime
-from sqlalchemy import Date, and_, cast, desc, func, select, text
+
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql.functions import coalesce
+from database.models import FAQ, Giveaway, GiveawayEnded, GiveawayParticipant, TaskTemplate, User, UserBalanceHistory, UserSubscription, UserTaskComplete, UserTaskParticipant, UsersStatistic, datetime
+from sqlalchemy import Date, and_, cast, desc, distinct, func, select, text
 from database.db_interface import BaseInterface
 from loguru import logger
 
@@ -49,7 +52,8 @@ class StatisticsDBInterface(BaseInterface):
         self,
         min_balance:        Optional[int] = None,
         max_balance:        Optional[int] = None,
-        giveway_id:         Optional[int] = None,
+        giveaway_id:         Optional[int] = None,
+        task_id:            Optional[int] = None,
         gs_subscription:    Optional[Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']] = None,
         datetime_start:     Optional[datetime] = None,
         datetime_end:       Optional[datetime] = None,
@@ -58,14 +62,17 @@ class StatisticsDBInterface(BaseInterface):
             # Фильтры
             user_filters = []
             balance_filters = []
+            giveaways_filters = []
             logger.debug('Мы тут')
             if datetime_start:
                 user_filters.append(User.created_at >= datetime_start)
                 balance_filters.append(UserBalanceHistory.created_at >= datetime_start)
+                giveaways_filters.append(GiveawayParticipant.created_at >= datetime_start)
             logger.debug('2')
             if datetime_end:
                 user_filters.append(User.created_at < datetime_end)
                 balance_filters.append(UserBalanceHistory.created_at < datetime_end)
+                giveaways_filters.append(GiveawayParticipant.created_at <= datetime_end)
             logger.debug('3')
             if gs_subscription:
                 match gs_subscription:
@@ -141,31 +148,147 @@ class StatisticsDBInterface(BaseInterface):
                 .group_by(cast(UsersStatistic.created_at, Date))
             ).subquery('us')
             
-            
-            # Объединяем сабквери, по дате
-            logger.debug('Финальный запрос')
+            task_filters = []
+            if task_id:
+                task_filters.append(
+                    UserTaskComplete.task_template_id == task_id
+                )
+            # Статистика по задачам (по дням)
+            user_tasks_cte = (
+                select(
+                    UserTaskComplete.task_template_id,
+                    UserTaskComplete.user_id,
+                    cast(UserTaskComplete.created_at, Date).label("date"),
+                    func.count(UserTaskComplete.id).label("user_completed")
+                )
+                .where(*task_filters)
+                .group_by(UserTaskComplete.task_template_id, UserTaskComplete.user_id, cast(UserTaskComplete.created_at, Date))
+            ).cte("user_tasks_cte")
+
+            tasks_count_cte = (
+                select(
+                    user_tasks_cte.c.user_id,
+                    user_tasks_cte.c.task_template_id,
+                    user_tasks_cte.c.date,
+                    user_tasks_cte.c.user_completed,
+                    TaskTemplate.complete_count
+                )
+                .select_from(user_tasks_cte)
+                .join(TaskTemplate, TaskTemplate.id == user_tasks_cte.c.task_template_id)
+            ).cte("tasks_count_cte")
+
+            fully_completed_tasks = (
+                select(
+                    tasks_count_cte.c.date,
+                    func.count().label("tasks_completed")
+                )
+                .where(tasks_count_cte.c.user_completed >= tasks_count_cte.c.complete_count)
+                .group_by(tasks_count_cte.c.date)
+            ).cte("fully_completed_tasks")
+
+            started_tasks = (
+                select(
+                    tasks_count_cte.c.date,
+                    func.count().label("tasks_started_partial")
+                )
+                .where(tasks_count_cte.c.user_completed < tasks_count_cte.c.complete_count)
+                .group_by(tasks_count_cte.c.date)
+            ).cte("started_tasks")
+
+            # opened = назначено, но не начато (нет записей в user_tasks_complete)
+            utp = aliased(UserTaskParticipant)
+            utc = aliased(UserTaskComplete)
+
+            opened_tasks = (
+                select(
+                    cast(utp.created_at, Date).label("date"),
+                    func.count().label("tasks_opened")
+                )
+                .select_from(utp)
+                .outerjoin(
+                    utc,
+                    and_(
+                        utp.task_template_id == utc.task_template_id,
+                        utp.user_id == utc.user_id
+                    )
+                )
+                .where(utc.task_template_id.is_(None))
+                .group_by(cast(utp.created_at, Date))
+            ).cte("opened_tasks")
+
+            tasks_stmt = (
+                select(
+                    coalesce(fully_completed_tasks.c.date, started_tasks.c.date, opened_tasks.c.date).label("date"),
+                    coalesce(fully_completed_tasks.c.tasks_completed, 0).label("tasks_completed"),
+                    (coalesce(started_tasks.c.tasks_started_partial, 0) + coalesce(opened_tasks.c.tasks_opened, 0)).label("tasks_started")
+                )
+                .outerjoin(started_tasks, fully_completed_tasks.c.date == started_tasks.c.date)
+                .outerjoin(opened_tasks, fully_completed_tasks.c.date == opened_tasks.c.date)
+            ).subquery("tasks_stmt")
+
+            # Prepare subquery for giveaway participants in the specified time range
+            giveaways_participants_subq = (
+                select(
+                    Giveaway.id.label('giveaway_id'),
+                    GiveawayParticipant.user_id,
+                    GiveawayParticipant.created_at
+                )
+                .join(GiveawayParticipant, GiveawayParticipant.giveaway_id == Giveaway.id)
+                .where(and_(*giveaways_filters))  # Applying filters for participants
+                .distinct()
+                .subquery()
+            )
+
+            # Subquery for previous participants before the datetime_start if provided
+            previous_participants_subq = (
+                select(
+                    Giveaway.id.label('giveaway_id'),
+                    GiveawayParticipant.user_id
+                )
+                .join(GiveawayParticipant, GiveawayParticipant.giveaway_id == Giveaway.id)
+                .where(GiveawayParticipant.created_at < datetime_start if datetime_start else True)  # If no datetime_start, get all records
+                .distinct()
+                .subquery()
+            )
+
+            # Query for giveaways statistics (primary and repeated participants)
+            giveaways_stats = (
+                select(
+                    cast(giveaways_participants_subq.c.created_at, Date).label("date"),
+                    func.count(distinct(giveaways_participants_subq.c.user_id)).label("giveaways_primary"),
+                    func.count(distinct(previous_participants_subq.c.user_id)).label("giveaways_repeated")
+                )
+                .outerjoin(previous_participants_subq, giveaways_participants_subq.c.giveaway_id == previous_participants_subq.c.giveaway_id)
+                .group_by(cast(giveaways_participants_subq.c.created_at, Date))
+            ).subquery("giveaways_stats")
+            # Объединяем сабквери в финальном запросе
             final_stmt = (
                 select(
                     func.coalesce(
                         registrations_stmt.c.date,
                         tickets_stmt.c.date
                     ).label("date"),
-                    
+
                     # Пользователи
                     func.coalesce(registrations_stmt.c.users_registrations, 0).label("users_registrations"),
                     func.coalesce(user_statistic_statment.c.users_runs, 0).label('users_runs'),
                     func.coalesce(user_statistic_statment.c.users_starts, 0).label('users_starts'),
-                    
+
                     # Регистрации
                     func.coalesce(registrations_stmt.c.registrations_origin_users, 0).label('registrations_origin_users'),
                     func.coalesce(registrations_stmt.c.registrations_referal_users, 0).label('registrations_referal_users'),
-                    
+
                     # Билеты
                     func.coalesce(tickets_stmt.c.tickets_received, 0).label('tickets_received'),
-                    func.coalesce(tickets_stmt.c.tickets_spent, 0).label('tickets_spent')
-                    
-                    
-                    
+                    func.coalesce(tickets_stmt.c.tickets_spent, 0).label('tickets_spent'),
+
+                    # Задачи
+                    func.coalesce(tasks_stmt.c.tasks_started, 0).label("tasks_started"),
+                    func.coalesce(tasks_stmt.c.tasks_completed, 0).label("tasks_completed"),
+
+                    # Розыгрыши
+                    func.coalesce(giveaways_stats.c.giveaways_primary, 0).label("giveaways_primary"),
+                    func.coalesce(giveaways_stats.c.giveaways_repeated, 0).label("giveaways_repeated")
                 )
                 .join(tickets_stmt, registrations_stmt.c.date == tickets_stmt.c.date)
                 .outerjoin(
@@ -175,6 +298,8 @@ class StatisticsDBInterface(BaseInterface):
                         tickets_stmt.c.date
                     ) == user_statistic_statment.c.date
                 )
+                .outerjoin(tasks_stmt, tasks_stmt.c.date == func.coalesce(registrations_stmt.c.date, tickets_stmt.c.date))
+                .outerjoin(giveaways_stats, giveaways_stats.c.date == func.coalesce(registrations_stmt.c.date, tickets_stmt.c.date))
                 .order_by(desc("date"))
             )
             
