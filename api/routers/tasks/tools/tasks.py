@@ -21,7 +21,7 @@ class TasksTools:
         new_task_data['big_descr'] = new_task_data.pop('description')
         new_task_data['timer_value'] = new_task_data.pop('timer')
         if new_task_data['timer_value'] :
-            hours, minutes, seconds = map(int, new_task_data.pop('timer').split(':'))
+            hours, minutes, seconds = map(int, new_task_data.pop('timer_value').split(':'))
             new_task_data['timer_value'] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
         
         if photo:
@@ -46,7 +46,7 @@ class TasksTools:
         new_task_data['gift_giveaway_id'] = new_task_data.pop('giveaway_id')
         new_task_data['timer_value'] = new_task_data.pop('timer')
         if new_task_data['timer_value']:
-            hours, minutes, seconds = map(int, new_task_data.pop('timer').split(':'))
+            hours, minutes, seconds = map(int, new_task_data.pop('timer_value').split(':'))
             new_task_data['timer_value'] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
         
         # Добавляем юзера чтобы получить id
