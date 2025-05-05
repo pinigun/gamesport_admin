@@ -330,8 +330,9 @@ class GiveawaysDBInterface(BaseInterface):
                 result["prizes"] = [dict(row) for row in (await session.execute(
                     text(
                         '''
-                        SELECT id, name FROM giveaways_prizes g
+                        SELECT id, name, postion, photo FROM giveaways_prizes g
                         WHERE g.giveaway_id = :giveaway_id
+                        ORDER BY g.position
                         '''
                     ),
                     {

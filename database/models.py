@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 import os
 from typing import Any
 
-from sqlalchemy import CheckConstraint, ForeignKey, String, DateTime, Boolean, Integer, Float, True_
+from sqlalchemy import CheckConstraint, ForeignKey, Interval, String, DateTime, Boolean, Integer, Float, True_
 from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -50,6 +50,9 @@ class TaskTemplate(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=False)
     tg_chat_id: Mapped[str] = mapped_column(String, nullable=True)
     photo: Mapped[str] = mapped_column(String, nullable=True)
+    postback_url: Mapped[str|None] = mapped_column(String, nullable=True)
+    timer_value: Mapped[timedelta] = mapped_column(Interval, nullable=True)
+    gift_giveaway_id: Mapped[int] = mapped_column(Integer, nullable=True)
 
     def get_data(self, complete_count=None):
         data = {
@@ -351,10 +354,11 @@ class GiveawayEnded(Base):
 class GiveawayPrize(Base):
     __tablename__ = 'giveaways_prizes'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String, nullable=True)
-    giveaway_id: Mapped[int] = mapped_column(Integer)
-    photo: Mapped[str] = mapped_column(String, nullable=True)
+    id:             Mapped[int] = mapped_column(Integer, primary_key=True)
+    name:           Mapped[str] = mapped_column(String, nullable=True)
+    giveaway_id:    Mapped[int] = mapped_column(Integer)
+    position:       Mapped[int] = mapped_column(Integer)
+    photo:          Mapped[str] = mapped_column(String, nullable=True)
     
     
 class Admin(Base):

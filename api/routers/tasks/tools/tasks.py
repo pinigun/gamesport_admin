@@ -1,3 +1,4 @@
+from datetime import timedelta
 import io
 from fastapi import HTTPException
 from jedi.inference import value
@@ -18,6 +19,9 @@ class TasksTools:
         new_task_data['active'] = new_task_data.pop('is_active')
         new_task_data['tickets'] = new_task_data.pop('reward')
         new_task_data['big_descr'] = new_task_data.pop('description')
+        if new_task_data['timer']:
+            hours, minutes, seconds = map(int, new_task_data.pop('timer').split(':'))
+            new_task_data['timer_value'] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
         
         if photo:
             new_task_data['photo'] = await PhotoTools.save_photo(path=f'static/tasks/{task_id}', photo=photo)
@@ -32,12 +36,16 @@ class TasksTools:
     
     async def add(    
         **new_task_data
-    ):
+    ) -> Task:
         photo = new_task_data.pop('photo', None)
         
         new_task_data['active'] = new_task_data.pop('is_active')
         new_task_data['tickets'] = new_task_data.pop('reward')
         new_task_data['big_descr'] = new_task_data.pop('description')
+        new_task_data['gift_giveaway_id'] = new_task_data.pop('giveaway_id')
+        if new_task_data['timer']:
+            hours, minutes, seconds = map(int, new_task_data.pop('timer').split(':'))
+            new_task_data['timer_value'] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
         
         # Добавляем юзера чтобы получить id
         new_task = await db.tasks.add(**new_task_data)
@@ -47,7 +55,7 @@ class TasksTools:
                 task_id=new_task.id,
                 photo=photo_path
             )
-        new_info = (await db.tasks.get_all(page=1, per_page=1, task_id=new_task.id))[0]
+        new_info = (await db.tasks.get(task_id=new_task.id))[0]
         return Task(**new_info)
     
     

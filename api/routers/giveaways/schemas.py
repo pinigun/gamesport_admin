@@ -127,6 +127,7 @@ class Giveaway(BaseModel):
 class PrizesData(BaseModel):
     name:               str
     border_color_hex:   str
+    position:           int
     
     @model_validator(mode='before')
     def validation(cls, values):

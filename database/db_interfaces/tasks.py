@@ -7,7 +7,11 @@ from database.models import Giveaway, TaskTemplate
 class TasksDBInterface(BaseInterface):
     def __init__(self, session_):
         super().__init__(session_ = session_)
-        
+    
+    
+    async def get(self, task_id: int):
+        return (await self.get_all(page=1, per_page=1, task_id=task_id))
+    
      
     async def delete(self, task_id: int):
         await self.delete_rows(TaskTemplate, id=task_id)   
@@ -77,6 +81,10 @@ class TasksDBInterface(BaseInterface):
                     tt.big_descr as description,
                     tt.tickets as reward,
                     tt.active as is_active,
+                    tt.gift_giveaway_id as giveaway_id,
+                    tt.postback_url as postback_url,
+                    tt.redirect_url,
+                    tt.timer_value as timer,
                     coalesce(fct.fully_completed_tasks, 0) as completed,
                     coalesce(sct.started_tasks, 0) as started,
                     tt.check_type,

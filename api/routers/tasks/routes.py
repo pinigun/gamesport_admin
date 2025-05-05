@@ -1,6 +1,7 @@
 from ast import Str
 from datetime import datetime, time
 import math
+import re
 from typing import Literal, Optional, Union
 from fastapi import APIRouter, Body, Depends, File, Form, Query, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -54,24 +55,43 @@ async def get_participants_report(task_id: int) -> StreamingResponse:
 async def add_task(
     title:          str = Form(..., description='Название задания'),
     is_active:      bool = Form(..., description="Статус"),
-    reward:         int = Form(..., description='Награда (в данный момент только билеты)'),
+    reward:         Union[int, Literal['']] = Form('', description='Награда в билетах'),
+    giveaway_id:    Union[int, Literal['']] = Form('', description='Наградой может быть участие в конкурсе, сюда передаем гивеэвей айди'),
     redirect_url:   Union[str, Literal['']] = Form('', description="Ссылка"),
-    check_type:     Literal['auto', 'manual', 'app', 'gs'] = Form(..., description='Тип проверки'),
+    check_type:     Literal['auto', 'handle', 'timer', 'postback'] = Form(..., description='Тип проверки'),
     complete_count: Union[int, Literal['']] = Form('', description='Кол-во выполненных задач для завершения задания'),
     description:    str = Form(..., description='Текст задания'),
+    timer:          Union[str, Literal['']] = Form('', description='Если выбран check_type="timer", то обязательное поле. Пример: 01:55:15'),
+    postback_url:   Union[str, Literal['']] = Form('', description='Если выбран check_type="postback", то обязательное поле.'),
     photo:          Union[UploadFile, Literal['']] = File('')
 ) -> Task:
     if isinstance(complete_count, int):
         if complete_count < 1:
-            raise HTTPException(400, detail='complete_count should been >= 1')
+            raise HTTPException(400, detail='Bad request: complete_count should been >= 1')
+        
+    if check_type == 'timer':
+        if timer == '' or timer is None:
+            raise HTTPException(400, detail='Bad request: "timer" is required if check_type="timer"')
+        pattern = r'^\d{2}:\d{2}:\d{2}$'
+        if not re.match(pattern, timer):
+            raise HTTPException(400, detail='Bad request: Timer format: HH:MM:SS')
+    
+    if check_type == 'postback':
+        if postback_url == '' or postback_url is None:
+            raise HTTPException(400, detail='Bad request: "postback_url" is required if check_type="postback"')
+    if giveaway_id == '' or giveaway_id is None:
+        giveaway_id = None
     return await TasksTools.add(
         title=title,
         is_active=is_active,
         reward=reward,
-        check_type=check_type,
-        description=description,
+        giveaway_id=giveaway_id,
         redirect_url=redirect_url if redirect_url != '' else None,
+        check_type=check_type,
         complete_count=complete_count if complete_count != '' else 1,
+        description=description,
+        timer=timer if timer != '' else None,
+        postback_url=postback_url,
         photo=photo if photo != '' else None
     )
     
@@ -79,18 +99,33 @@ async def add_task(
 @router.patch('/{task_id}')
 async def edit_task(
     task_id:        int,
-    title:          Union[str, Literal['']] = Form('', description='Название задания'),
-    is_active:      Union[bool, Literal['']] = Form('', description="Статус"),
-    reward:         Union[int, Literal['']] = Form('', description='Награда (в данный момент только билеты)'),
+    title:          str = Form(..., description='Название задания'),
+    is_active:      bool = Form(..., description="Статус"),
+    reward:         Union[int, Literal['']] = Form('', description='Награда в билетах'),
+    giveaway_id:    Union[int, Literal['']] = Form('', description='Наградой может быть участие в конкурсе, сюда передаем гивеэвей айди'),
     redirect_url:   Union[str, Literal['']] = Form('', description="Ссылка"),
-    check_type:     Literal['', 'auto', 'manual', 'app', 'gs'] = Form('', description='Тип проверки'),
+    check_type:     Literal['auto', 'handle', 'timer', 'postback'] = Form(..., description='Тип проверки'),
     complete_count: Union[int, Literal['']] = Form('', description='Кол-во выполненных задач для завершения задания'),
-    description:    Union[str, Literal['']] = Form('', description='Текст задания'),
+    description:    str = Form(..., description='Текст задания'),
+    timer:          Union[str, Literal['']] = Form('', description='Если выбран check_type="timer", то обязательное поле. Пример: 01:55:15'),
+    postback_url:   Union[str, Literal['']] = Form('', description='Если выбран check_type="postback", то обязательное поле.'),
     photo:          Union[UploadFile, Literal['']] = File('')
 ) -> Task:
     if isinstance(complete_count, int):
         if complete_count < 1:
-            raise HTTPException(400, detail='complete_count should been >= 1')
+            raise HTTPException(400, detail='Bad request: complete_count should been >= 1')
+        
+    if check_type == 'timer':
+        if timer == '' or timer is None:
+            raise HTTPException(400, detail='Bad request: "timer" is required if check_type="timer"')
+        pattern = r'^\d{2}:\d{2}:\d{2}$'
+        if not re.match(pattern, timer):
+            raise HTTPException(400, detail='Bad request: timer format: HH:MM:SS')
+    
+    if check_type == 'postback':
+        if postback_url == '' or postback_url is None:
+            raise HTTPException(400, detail='Bad request: "postback_url" is required if check_type="postback"')
+        
     return await TasksTools.update(
         task_id =       task_id,
         title=          title if title != '' else None,
@@ -100,7 +135,10 @@ async def edit_task(
         description=    description if description else None,
         redirect_url=   redirect_url if redirect_url != '' else None,
         complete_count= complete_count if complete_count != '' else None,
-        photo=          photo if photo != '' else None
+        photo=          photo if photo != '' else None,
+        giveaway_id=    giveaway_id if giveaway_id != '' else None,
+        timer=          timer if timer != '' else None,
+        postback_url=   postback_url if postback_url != '' else None
     )
     
     

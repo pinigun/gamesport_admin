@@ -37,14 +37,14 @@ async def get_giveaways(
 @router.post('/giveaway', tags=['Giveaways'])
 async def add_giveaway(
     prizes_photos:  list[UploadFile],
-    prizes_data:    str | list[PrizesData],
+    prizes_data:    list[PrizesData] | str,
     name:           str = Form(),
     active:         bool = Form(True),
     start_date:     str = Form(..., description=f'YYYY-MM-DD hh:mm:ss'),
     period_days:    int = Form(),
     price:          int = Form(),
-) -> Giveaway:
-    '''Ручка добавления конкурсов, фото добав'''
+):
+    logger.debug(prizes_data)
     return await GiveawaysTools.add(
         name=name,
         active=active,
@@ -57,7 +57,7 @@ async def add_giveaway(
     
 
 @router.patch('/{giveaway_id}', tags=['Giveaways'])
-async def add_giveaway(
+async def edit_giveaway(
     giveaway_id:    int,
     name:           Union[str, Literal['']] = Form(''),
     active:         Union[bool, Literal['']] = Form(''),
