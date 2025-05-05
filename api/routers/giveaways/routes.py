@@ -36,8 +36,8 @@ async def get_giveaways(
     
 @router.post('/giveaway', tags=['Giveaways'])
 async def add_giveaway(
-    prizes_photos:  list[UploadFile],
     prizes_data:    list[PrizesData] | str,
+    prizes_photos:  list[UploadFile] = File(),
     name:           str = Form(),
     active:         bool = Form(True),
     start_date:     str = Form(..., description=f'YYYY-MM-DD hh:mm:ss'),
@@ -48,7 +48,7 @@ async def add_giveaway(
     return await GiveawaysTools.add(
         name=name,
         active=active,
-        start_date=start_date,
+        start_date=datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S'),
         period_days=period_days,
         price=price,
         prizes_data=prizes_data,
