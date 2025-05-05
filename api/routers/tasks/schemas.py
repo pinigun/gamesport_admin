@@ -50,15 +50,6 @@ class Task(BaseModel):
         return value
     
     
-    @field_validator("check_type", mode='before')
-    def validate_check_type(cls, value: str | None):
-        if value is not None:
-            value = CHECK_TYPES_MAP.get(value)
-            if not value:
-                value = '-'
-        return value
-    
-    
     @field_validator('photo', mode='before')
     def format_photo_url(cls, value):
         if value is not None:
