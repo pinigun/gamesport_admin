@@ -354,11 +354,12 @@ class GiveawayEnded(Base):
 class GiveawayPrize(Base):
     __tablename__ = 'giveaways_prizes'
 
-    id:             Mapped[int] = mapped_column(Integer, primary_key=True)
-    name:           Mapped[str] = mapped_column(String, nullable=True)
-    giveaway_id:    Mapped[int] = mapped_column(Integer)
-    position:       Mapped[int] = mapped_column(Integer)
-    photo:          Mapped[str] = mapped_column(String, nullable=True)
+    id:                 Mapped[int] = mapped_column(Integer, primary_key=True)
+    name:               Mapped[str] = mapped_column(String, nullable=True)
+    giveaway_id:        Mapped[int] = mapped_column(Integer)
+    position:           Mapped[int] = mapped_column(Integer)
+    border_color_hex:   Mapped[str] = mapped_column(String, nullable=True)
+    photo:              Mapped[str] = mapped_column(String, nullable=True)
     
     
 class Admin(Base):

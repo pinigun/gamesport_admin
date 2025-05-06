@@ -51,7 +51,7 @@ class GiveawaysDBInterface(BaseInterface):
         async with self.async_ses() as session:
             query = f'''
                 select 
-                    gp.user_id,
+                    gp.user_id as id,
                     u.email,
                     u.phone,
                     u.tg_id,
@@ -73,16 +73,17 @@ class GiveawaysDBInterface(BaseInterface):
                 offset :offset
                 limit :limit
             '''
-        params = {
-            'giveaway_id': giveaway_id,
-            'offset': (page-1)*per_page,
-            'limit': per_page
-        }
-        if end_date:
-            params['end_date'] = end_date
-        if start_date:
-            params['start_date'] = start_date
-        return (await session.execute(text(query), params=params)).mappings().all()
+            params = {
+                'giveaway_id': giveaway_id,
+                'offset': (page-1)*per_page,
+                'limit': per_page
+            }
+            if end_date:
+                params['end_date'] = end_date
+            if start_date:
+                params['start_date'] = start_date
+            result = await session.execute(text(query), params=params)
+        return result.mappings().all()
     
     
     async def get_giveaways_count(self):
@@ -330,7 +331,7 @@ class GiveawaysDBInterface(BaseInterface):
                 result["prizes"] = [dict(row) for row in (await session.execute(
                     text(
                         '''
-                        SELECT id, name, postion, photo FROM giveaways_prizes g
+                        SELECT id, name, position, photo FROM giveaways_prizes g
                         WHERE g.giveaway_id = :giveaway_id
                         ORDER BY g.position
                         '''

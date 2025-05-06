@@ -24,7 +24,6 @@ async def get_giveaways(
 ) -> GiveawaysData:
     total_items = await GiveawaysTools.get_giveaways_count()
     total_pages = math.ceil(total_items / per_page)
-    
     return GiveawaysData(
         total_pages=total_pages,
         total_items=total_items,
@@ -203,8 +202,6 @@ async def get_giveaway_participtants_report(
         return StreamingResponse(output, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
     except CustomDBExceptions as ex:
         raise HTTPException(status_code=400, detail=ex.message)    
-    
-    
     
     
 @router.post('/participants/winner', tags=['Giveaways.Participants'])

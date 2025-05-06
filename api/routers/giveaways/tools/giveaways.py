@@ -118,7 +118,11 @@ class GiveawaysTools:
         
         photos_paths = await asyncio.gather(
             *[
-                PhotoTools.save_photo(path=f'static/giveaways/{new_giveaway.id}', photo=photo)
+                PhotoTools.save_photo(
+                    path=f'static/giveaways/{new_giveaway.id}', 
+                    photo=photo,
+                    filename=photo.filename
+                )
                 for photo in prizes_photos
             ]
         )
