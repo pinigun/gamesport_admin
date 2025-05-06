@@ -7,7 +7,7 @@ import pandas as pd
 from database import db
 from datetime import datetime
 from tools.photos import PhotoTools
-from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, GiveawayParticiptant, GiveawayPrize, PrizesData
+from api.routers.giveaways.schemas import Giveaway, GiveawayHistoryRecord, GiveawayParticiptant, GiveawayPrize, Prize, PrizesData
 
 
 class GiveawaysTools:
@@ -111,7 +111,8 @@ class GiveawaysTools:
     
     
     async def add(**new_giveaway_data) -> Giveaway:
-        prizes_data: list[PrizesData] = new_giveaway_data.pop('prizes_data')
+        prizes_data: list[Prize] = new_giveaway_data.pop('prizes_data').prizes
+        logger.debug(f'{type(prizes_data)=} {prizes_data=}')
         prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
         new_giveaway = await db.giveaways.add(**new_giveaway_data)
         

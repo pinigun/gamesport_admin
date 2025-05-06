@@ -17,7 +17,7 @@ class GiveawayPrize(BaseModel):
 
 
 class GiveawayParticiptant(BaseModel):
-    user_id: int
+    id: int
     email: str | None
     phone: str | None
     tg_id: int | None
@@ -124,16 +124,20 @@ class Giveaway(BaseModel):
         return values
 
 
-class PrizesData(BaseModel):
+class Prize(BaseModel):
     name:               str
     border_color_hex:   str
     position:           int
+
+
+class PrizesData(BaseModel):
+    prizes: list[Prize]
     
     @model_validator(mode='before')
     def validation(cls, values):
         if isinstance(values, str):
             values = json.loads(values)
-            logger.debug(values)
+            logger.debug(type(values))
         return values
 
 

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, 
 from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 
-from api.routers.giveaways.schemas import Giveaway, GiveawaysData, GiveawaysHistoryData, GivewayParticipantsData, GivewayPrizesData, PrizesData
+from api.routers.giveaways.schemas import Giveaway, GiveawaysData, GiveawaysHistoryData, GivewayParticipantsData, GivewayPrizesData, Prize, PrizesData
 from api.routers.giveaways.tools.giveaways import GiveawaysTools
 from api.routers.statistics.tools.statistics import StatisticTools
 from config import DATE_FORMAT, FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
@@ -36,7 +36,7 @@ async def get_giveaways(
     
 @router.post('/giveaway', tags=['Giveaways'])
 async def add_giveaway(
-    prizes_data:    list[PrizesData] | str,
+    prizes_data:    PrizesData,
     prizes_photos:  list[UploadFile] = File(),
     name:           str = Form(),
     active:         bool = Form(True),
@@ -44,7 +44,8 @@ async def add_giveaway(
     period_days:    int = Form(),
     price:          int = Form(),
 ):
-    logger.debug(prizes_data)
+    prizes_data = PrizesData.model_validate(prizes_data)
+    logger.debug(type(prizes_data))
     return await GiveawaysTools.add(
         name=name,
         active=active,
