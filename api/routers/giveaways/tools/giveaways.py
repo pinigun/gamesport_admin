@@ -93,6 +93,8 @@ class GiveawaysTools:
             GiveawayHistoryRecord(**dict(giveaway_hr))
             for giveaway_hr in await db.giveaways.get_history(page, per_page)
         ]
+        
+        
     # async def add_prize(giveaway_id: int, **prize_data):
     #     photo = prize_data.pop('photo', None)
         

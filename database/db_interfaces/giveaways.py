@@ -55,6 +55,7 @@ class GiveawaysDBInterface(BaseInterface):
                     u.email,
                     u.phone,
                     u.tg_id,
+                    u.vk_id,
                     gp2.id as prize_id,
                     gp2.name as prize_name
                 from giveaways_participant gp 
@@ -68,6 +69,7 @@ class GiveawaysDBInterface(BaseInterface):
                     u.email,
                     u.phone,
                     u.tg_id,
+                    u.vk_id,
                     gp2.id,
                     gp2.name
                 offset :offset
@@ -158,7 +160,7 @@ class GiveawaysDBInterface(BaseInterface):
     ):
         filters = []
         if start_date:
-            filters = filters.append(start_date <= GiveawayParticipant.created_at)
+            filters.append(start_date <= GiveawayParticipant.created_at)
         if end_date:
             filters.append(GiveawayParticipant.created_at <= end_date)
         return await self.get_rows_count(
@@ -217,6 +219,7 @@ class GiveawaysDBInterface(BaseInterface):
                             'id', ge.winner_id,
                             'email', u.email,
                             'tg_id', u.tg_id,
+                            'vk_id', u.vk_id,
                             'phone', u.phone,
                             'prize_id', ge.giveaway_id,
                             'prize_name', gp.name
@@ -352,7 +355,8 @@ class GiveawaysDBInterface(BaseInterface):
             GiveawayPrize,
             giveaway_id=giveaway_id,
             offset=(page-1)*per_page,
-            limit=per_page
+            limit=per_page,
+            order_by='postition'
         )
         
         

@@ -17,11 +17,12 @@ class GiveawayPrize(BaseModel):
 
 
 class GiveawayParticiptant(BaseModel):
-    id: int
-    email: str | None
-    phone: str | None
-    tg_id: int | None
-    prize_id: int | None
+    id:         int
+    email:      str | None
+    phone:      str | None
+    tg_id:      int | None
+    vk_id:      str | None
+    prize_id:   int | None
     prize_name: str | None
     
     model_config = ConfigDict(from_attributes=True)

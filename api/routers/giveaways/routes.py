@@ -42,7 +42,7 @@ async def add_giveaway(
     start_date:     str = Form(..., description=f'YYYY-MM-DD hh:mm:ss'),
     period_days:    int = Form(),
     price:          int = Form(),
-):
+) -> Giveaway:
     prizes_data = PrizesData.model_validate(prizes_data)
     logger.debug(type(prizes_data))
     return await GiveawaysTools.add(
