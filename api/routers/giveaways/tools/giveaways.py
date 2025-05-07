@@ -4,6 +4,7 @@ import os
 from fastapi import UploadFile
 from loguru import logger
 import pandas as pd
+from config import BASE_ADMIN_URL
 from database import db
 from datetime import datetime
 from tools.photos import PhotoTools
@@ -95,28 +96,19 @@ class GiveawaysTools:
         ]
             
     
-    async def add(**new_giveaway_data) -> Giveaway:
-        prizes_data: list[Prize] = [
-            prize.model_dump(exclude=['id'])
-            for prize in new_giveaway_data.pop('prizes_data').prizes
-        ]
-        logger.debug(f'{type(prizes_data)=} {prizes_data=}')
-        prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
-        new_giveaway = await db.giveaways.add(**new_giveaway_data)
-        
-        # for i, prize_data in enumerate(prizes_data):
-        #     prize_data = prize_data.model_dump()
-        #     prize_data['photo'] = photos_paths[i]
-        #     prizes_data[i] = prize_data
-        
+    async def add_prizes(
+        giveaway_id: int,
+        prizes_data: list[dict],
+        prizes_photos: list[UploadFile]
+    ):
         prizes=await db.giveaways.add_prizes(
-            giveaway_id=new_giveaway.id,
+            giveaway_id=giveaway_id,
             prizes_data=prizes_data
         )
         photos_paths = await asyncio.gather(
             *[
                 PhotoTools.save_photo(
-                    path=f'static/giveaways/{new_giveaway.id}', 
+                    path=f'static/giveaways/{giveaway_id}', 
                     photo=photo,
                     filename=str(prizes[i].id)
                 )
@@ -127,9 +119,25 @@ class GiveawaysTools:
             prize.photo = photos_paths[i]
             await db.giveaways.update_prize(
                 prize_id=prize.id,
-                giveaway_id=new_giveaway.id,
+                giveaway_id=giveaway_id,
                 photo=photos_paths[i]
             )
+    
+    
+    async def add(**new_giveaway_data) -> Giveaway:
+        prizes_data: list[dict] = [
+            prize.model_dump(exclude=['id'])
+            for prize in new_giveaway_data.pop('prizes_data').prizes
+        ]
+        logger.debug(f'{type(prizes_data)=} {prizes_data=}')
+        prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
+        new_giveaway = await db.giveaways.add(**new_giveaway_data)
+        
+        await GiveawaysTools.add_prizes(
+            giveaway_id=new_giveaway.id,
+            prizes_data=prizes_data,
+            prizes_photos=prizes_photos,
+        )
         
         new_info = await db.giveaways.get_all(giveaway_id=new_giveaway.id)
         return Giveaway(**new_info)
@@ -137,10 +145,13 @@ class GiveawaysTools:
     
     async def update(giveaway_id: int, **new_giveaway_data):
         prizes_data = new_giveaway_data['prizes_data']
-        new_prizes = [
-            prize
-            for prize in prizes_data
-        ]
+        prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
+        new_prizes = []
+        new_photos = []
+        for i, prize in enumerate(prizes_data):
+            if prize.id is not None:
+                new_prizes.append()
+                new_photos.append()
         await db.giveaways.update(
             giveaway_id=giveaway_id,
             **{key: value for key, value in new_giveaway_data.items() if value is not None}
@@ -150,10 +161,13 @@ class GiveawaysTools:
     
     
     async def get(giveaway_id: int) -> Giveaway:
+        result = dict(
+            await db.giveaways.get_all(giveaway_id=giveaway_id)
+        )
+        for i, prize in enumerate(result['prizes']):
+            prize['photo'] = f"{BASE_ADMIN_URL}/{prize['photo']}"
         return Giveaway.model_validate(
-            dict(
-                await db.giveaways.get_all(giveaway_id=giveaway_id)
-            )
+            result
         )
     
     
