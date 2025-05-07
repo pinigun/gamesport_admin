@@ -20,7 +20,7 @@ class GiveawayParticiptant(BaseModel):
     id:         int
     email:      str | None
     phone:      str | None
-    tg_id:      int | None
+    tg_id:      str | None
     vk_id:      str | None
     prize_id:   int | None
     prize_name: str | None
