@@ -58,3 +58,7 @@ class PhotoTools:
             logger.warning(f"Папка не найдена: {path}")
         except Exception as e:
             logger.error(f"Ошибка при удалении папки {path}: {e}")
+            
+    
+    async def delete_file(photo_path: str):
+        '''Асинхронно удаляет файл'''

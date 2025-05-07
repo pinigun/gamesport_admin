@@ -103,7 +103,7 @@ class GiveawaysTools:
     ):
         prizes_data: list[dict] = [
             prize.model_dump(exclude=['id'])
-            for prize in prizes_data.prizes
+            for prize in prizes_data
         ]
         prizes=await db.giveaways.add_prizes(
             giveaway_id=giveaway_id,
@@ -129,7 +129,7 @@ class GiveawaysTools:
     
     
     async def add(**new_giveaway_data) -> Giveaway:
-        prizes_data=new_giveaway_data.pop('prizes_data')
+        prizes_data=new_giveaway_data.pop('prizes_data').prizes
         prizes_photos=new_giveaway_data.pop('prizes_photos')
         new_giveaway = await db.giveaways.add(**new_giveaway_data)
         
@@ -143,8 +143,10 @@ class GiveawaysTools:
         
     
     async def update(giveaway_id: int, **new_giveaway_data):
-        prizes_data = new_giveaway_data['prizes_data']
+        prizes_data = new_giveaway_data.pop('prizes_data').prizes
         prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
+        logger.debug(f"{prizes_data=}")
+        logger.debug(f"{prizes_photos=}")
         new_prizes = []
         new_photos = []
         for i, prize in enumerate(prizes_data):
@@ -152,8 +154,38 @@ class GiveawaysTools:
                 new_prizes.append(prize)
                 new_photos.append(prizes_photos[i])
                 
+                prizes_data.pop(i)
+                prizes_photos.pop(i)
                 
+        await GiveawaysTools.add_prizes(
+            giveaway_id=giveaway_id,
+            prizes_data=prizes_data,
+            prizes_photos=prizes_photos
+        )
+                
+        giveaway = dict(await db.giveaways.get_all(giveaway_id=giveaway_id))
+        curr_giveaway_prizes_ids = [prize['id'] for prize in giveaway['prizes']]
         
+        # если у нас удалили какой то приз, то удаляем его из бд
+        if len(prizes_data) < len(giveaway['prizes']):
+            new_giveaway_prizes_ids = [prize.id for prize in prizes_data]
+            needed_delete_ids = set(curr_giveaway_prizes_ids) - set(new_giveaway_prizes_ids)
+            for prize_id in needed_delete_ids:
+                await db.giveaways.delete_prize(prize_id)
+                await PhotoTools.delete()
+            
+        for i, prize in enumerate(prizes_data):
+            await db.giveaways.update_prize(
+                prize_id = prize.id,
+                giveaway_id=giveaway_id,
+                **prize.model_dump(exclude=['id'])
+            )
+            await PhotoTools.save_photo(
+                path=f'static/giveaways/{giveaway_id}',
+                photo=prizes_photos[i],
+                filename=prize.id
+            )
+                
         await db.giveaways.update(
             giveaway_id=giveaway_id,
             **{key: value for key, value in new_giveaway_data.items() if value is not None}

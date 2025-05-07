@@ -44,6 +44,8 @@ async def add_giveaway(
     price:          int = Form(),
 ) -> Giveaway:
     prizes_data = PrizesData.model_validate(prizes_data)
+    if len(prizes_data.prizes) != len(prizes_photos):
+        raise HTTPException(400, detail="Bad request: len(prizes_data.prizes must be equal to len(prizes_photos).")
     return await GiveawaysTools.add(
         name=name,
         active=active,
@@ -66,6 +68,9 @@ async def edit_giveaway(
     period_days:    Union[int, Literal['']] = Form(''),
     price:          Union[int, Literal['']] = Form(''),
 ) -> Giveaway:
+    prizes_data = PrizesData.model_validate(prizes_data)
+    if len(prizes_data.prizes) != len(prizes_photos):
+        raise HTTPException(400, detail="Bad request: len(prizes_data.prizes must be equal to len(prizes_photos).")
     try:
         return await GiveawaysTools.update(
             giveaway_id=    giveaway_id,

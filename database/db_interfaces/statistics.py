@@ -73,6 +73,8 @@ class StatisticsDBInterface(BaseInterface):
                 user_filters.append(User.created_at < datetime_end)
                 balance_filters.append(UserBalanceHistory.created_at < datetime_end)
                 giveaways_filters.append(GiveawayParticipant.created_at <= datetime_end)
+            if giveaway_id is not None:
+                giveaways_filters.append(GiveawayParticipant.giveaway_id==giveaway_id)
             logger.debug('3')
             if gs_subscription:
                 match gs_subscription:
