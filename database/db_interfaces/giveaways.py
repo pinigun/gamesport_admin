@@ -13,6 +13,13 @@ class GiveawaysDBInterface(BaseInterface):
         super().__init__(session_ = session_)
     
     
+    async def delete_prize(self, prize_id: int):
+        await self.delete_rows(
+            GiveawayPrize,
+            id=prize_id
+        )
+    
+    
     async def add_prizes(self, giveaway_id: int, prizes_data: list[dict]):
         return await self.add_rows(
             models=[

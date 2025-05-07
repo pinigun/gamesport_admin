@@ -60,5 +60,5 @@ class PhotoTools:
             logger.error(f"Ошибка при удалении папки {path}: {e}")
             
     
-    async def delete_file(photo_path: str):
+    async def delete_file(file_path: str):
         '''Асинхронно удаляет файл'''

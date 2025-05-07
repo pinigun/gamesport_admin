@@ -150,30 +150,34 @@ class GiveawaysTools:
         new_prizes = []
         new_photos = []
         for i, prize in enumerate(prizes_data):
-            if prize.id is not None:
+            if prize.id is None:
                 new_prizes.append(prize)
                 new_photos.append(prizes_photos[i])
                 
                 prizes_data.pop(i)
                 prizes_photos.pop(i)
-                
-        await GiveawaysTools.add_prizes(
-            giveaway_id=giveaway_id,
-            prizes_data=prizes_data,
-            prizes_photos=prizes_photos
-        )
-                
-        giveaway = dict(await db.giveaways.get_all(giveaway_id=giveaway_id))
-        curr_giveaway_prizes_ids = [prize['id'] for prize in giveaway['prizes']]
+                    
+        curr_giveaway_prizes = {
+            prize['id']: prize
+            for prize in dict(await db.giveaways.get_all(giveaway_id=giveaway_id))['prizes']
+        }
+        curr_giveaway_prizes_ids = curr_giveaway_prizes.keys()
         
         # если у нас удалили какой то приз, то удаляем его из бд
-        if len(prizes_data) < len(giveaway['prizes']):
-            new_giveaway_prizes_ids = [prize.id for prize in prizes_data]
+        if len(prizes_data) < len(curr_giveaway_prizes):
+            new_giveaway_prizes_ids = {
+                prize.id
+                for prize in prizes_data
+            }
             needed_delete_ids = set(curr_giveaway_prizes_ids) - set(new_giveaway_prizes_ids)
             for prize_id in needed_delete_ids:
                 await db.giveaways.delete_prize(prize_id)
-                await PhotoTools.delete()
-            
+                logger.debug(curr_giveaway_prizes[prize_id]['photo'])
+                if curr_giveaway_prizes[prize_id]['photo'] is not None:
+                    await PhotoTools.delete_file(
+                        file_path=curr_giveaway_prizes[prize_id]['photo']
+                    )
+                
         for i, prize in enumerate(prizes_data):
             await db.giveaways.update_prize(
                 prize_id = prize.id,
@@ -186,6 +190,12 @@ class GiveawaysTools:
                 filename=prize.id
             )
                 
+        await GiveawaysTools.add_prizes(
+            giveaway_id=giveaway_id,
+            prizes_data=new_prizes,
+            prizes_photos=new_photos
+        )
+            
         await db.giveaways.update(
             giveaway_id=giveaway_id,
             **{key: value for key, value in new_giveaway_data.items() if value is not None}
