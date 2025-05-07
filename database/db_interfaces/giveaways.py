@@ -14,7 +14,7 @@ class GiveawaysDBInterface(BaseInterface):
     
     
     async def add_prizes(self, giveaway_id: int, prizes_data: list[dict]):
-        await self.add_rows(
+        return await self.add_rows(
             models=[
                 GiveawayPrize(
                     giveaway_id=giveaway_id,
@@ -261,7 +261,7 @@ class GiveawaysDBInterface(BaseInterface):
     async def update_prize(self, prize_id: int, giveaway_id: int, **new_data) -> Giveaway:
         return await self.update_rows(
             GiveawayPrize,
-            filter_by={'giveaway_id': giveaway_id, "prize_id": prize_id},
+            filter_by={'giveaway_id': giveaway_id, "id": prize_id},
             **new_data
         )
     

@@ -93,59 +93,54 @@ class GiveawaysTools:
             GiveawayHistoryRecord(**dict(giveaway_hr))
             for giveaway_hr in await db.giveaways.get_history(page, per_page)
         ]
-        
-        
-    # async def add_prize(giveaway_id: int, **prize_data):
-    #     photo = prize_data.pop('photo', None)
-        
-    #     new_prize = await db.giveaways.add(**prize_data)
-        
-    #     photo_path = f'static/prizes/{giveaway_id}'
-    #     os.makedirs(photo_path, exist_ok=True)
-    #     photo_path = await PhotoTools.save_photo(path=photo_path, photo=photo, filename=new_prize.id)
-    #     await db.giveaways.update_prize(
-    #         giveaway_id=giveaway_id,
-    #         prize_id=new_prize.id,
-    #         photo=photo_path
-    #     )
-    #     new_info = await db.giveaways.get_all(giveaway_id=giveaway_id)
-    #     return Giveaway(**new_info)
-    
+            
     
     async def add(**new_giveaway_data) -> Giveaway:
-        prizes_data: list[Prize] = new_giveaway_data.pop('prizes_data').prizes
+        prizes_data: list[Prize] = [
+            prize.model_dump(exclude=['id'])
+            for prize in new_giveaway_data.pop('prizes_data').prizes
+        ]
         logger.debug(f'{type(prizes_data)=} {prizes_data=}')
         prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
         new_giveaway = await db.giveaways.add(**new_giveaway_data)
         
+        # for i, prize_data in enumerate(prizes_data):
+        #     prize_data = prize_data.model_dump()
+        #     prize_data['photo'] = photos_paths[i]
+        #     prizes_data[i] = prize_data
+        
+        prizes=await db.giveaways.add_prizes(
+            giveaway_id=new_giveaway.id,
+            prizes_data=prizes_data
+        )
         photos_paths = await asyncio.gather(
             *[
                 PhotoTools.save_photo(
                     path=f'static/giveaways/{new_giveaway.id}', 
                     photo=photo,
-                    filename=photo.filename
+                    filename=str(prizes[i].id)
                 )
-                for photo in prizes_photos
+                for i, photo in enumerate(prizes_photos)
             ]
         )
-        for i, prize_data in enumerate(prizes_data):
-            prize_data = prize_data.model_dump()
-            prize_data['photo'] = photos_paths[i]
-            prizes_data[i] = prize_data
-        await db.giveaways.add_prizes(
-            giveaway_id=new_giveaway.id,
-            prizes_data=prizes_data
-        )
+        for i, prize in enumerate(prizes):
+            prize.photo = photos_paths[i]
+            await db.giveaways.update_prize(
+                prize_id=prize.id,
+                giveaway_id=new_giveaway.id,
+                photo=photos_paths[i]
+            )
+        
         new_info = await db.giveaways.get_all(giveaway_id=new_giveaway.id)
         return Giveaway(**new_info)
         
     
     async def update(giveaway_id: int, **new_giveaway_data):
-        photo = new_giveaway_data.pop('photo', None)
-        if photo:
-            os.makedirs(f'static/giveaways/{giveaway_id}', exist_ok=True)
-            await PhotoTools.save_photo(path=f'static/giveaways/{giveaway_id}', photo=photo)
-            
+        prizes_data = new_giveaway_data['prizes_data']
+        new_prizes = [
+            prize
+            for prize in prizes_data
+        ]
         await db.giveaways.update(
             giveaway_id=giveaway_id,
             **{key: value for key, value in new_giveaway_data.items() if value is not None}

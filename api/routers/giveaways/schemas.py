@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Literal, Optional
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from database.models import Giveaway as GivewayDBModel
 import json
 from config import BASE_ADMIN_URL
@@ -126,9 +126,9 @@ class Giveaway(BaseModel):
 
 
 class Prize(BaseModel):
-    name:               str
-    border_color_hex:   str
-    position:           int
+    id:         int | None = None
+    name:       str
+    position:   int = Field(gt=0, description="Start from 1")
 
 
 class PrizesData(BaseModel):
@@ -176,3 +176,17 @@ class GivewayParticipantsData(BaseModel):
     current_page:   int
     
     items:          list[GiveawayParticiptant]
+
+
+class GiveawayRequest(BaseModel):
+    name:           str
+    active:         bool
+    start_date:     date = Field(..., description='YYYY-MM-DD')
+    period_days:    int = Field(..., ge=0)
+    price:          int = Field(..., ge=0)
+
+
+class PrizeRequest(BaseModel):
+    name:       str
+    photo:      str 
+    position:   str = Field(..., gt=0)

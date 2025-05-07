@@ -282,6 +282,7 @@ class BaseInterface:
         async with self.async_ses() as session:
             session.add_all(models)
             try:
+                await session.flush()
                 await session.commit()
                 return models
             except Exception as ex:

@@ -44,7 +44,6 @@ async def add_giveaway(
     price:          int = Form(),
 ) -> Giveaway:
     prizes_data = PrizesData.model_validate(prizes_data)
-    logger.debug(type(prizes_data))
     return await GiveawaysTools.add(
         name=name,
         active=active,
@@ -59,22 +58,24 @@ async def add_giveaway(
 @router.patch('/{giveaway_id}', tags=['Giveaways'])
 async def edit_giveaway(
     giveaway_id:    int,
+    prizes_data:    PrizesData,
+    prizes_photos:  list[UploadFile] = File(),
     name:           Union[str, Literal['']] = Form(''),
     active:         Union[bool, Literal['']] = Form(''),
     start_date:     Union[datetime, Literal['']] = Form(''),
     period_days:    Union[int, Literal['']] = Form(''),
     price:          Union[int, Literal['']] = Form(''),
-    photo:          Union[UploadFile, Literal['']] = File(None)
 ) -> Giveaway:
     try:
         return await GiveawaysTools.update(
-            giveaway_id=giveaway_id,
-            name=       name        if name not in (None, '') else None,
-            active=     active      if active not in (None, '') else None,
-            start_date= start_date  if start_date not in (None, '') else None,
-            period_days=period_days if period_days not in (None, '') else None,
-            price=      price       if price not in (None, '') else None,
-            photo=      photo       if photo not in (None, '') else None
+            giveaway_id=    giveaway_id,
+            prizes_data=    prizes_data,
+            prizes_photos=  prizes_photos,
+            name=           name        if name not in (None, '') else None,
+            active=         active      if active not in (None, '') else None,
+            start_date=     start_date  if start_date not in (None, '') else None,
+            period_days=    period_days if period_days not in (None, '') else None,
+            price=          price       if price not in (None, '') else None,
         )
     except CustomDBExceptions as ex:
         raise HTTPException(status_code=400, detail=ex.message)
@@ -107,7 +108,7 @@ async def get_giveaway(
         raise HTTPException(status_code=400, detail=ex.message)
 
 
-@router.post('/prizes/{giveaway_id}', tags=['Giveaways.Prizes'])
+@router.post('/prizes/{giveaway_id}', tags=['Giveaways.Prizes'], include_in_schema=False)
 async def add_prizes(
     giveaway_id: int,
     name:   list[str] = Form(),
