@@ -58,7 +58,26 @@ class PhotoTools:
             logger.warning(f"Папка не найдена: {path}")
         except Exception as e:
             logger.error(f"Ошибка при удалении папки {path}: {e}")
-            
-    
+        
+        
+    @staticmethod
     async def delete_file(file_path: str):
-        '''Асинхронно удаляет файл'''
+        lock_path = f"{file_path}.lock"
+
+        try:
+            async with AsyncFileLock(lock_path, timeout=10):
+                # Удаление самого файла
+                if await async_path_exists(file_path):
+                    try:
+                        await remove(file_path)
+                    except Exception as e:
+                        logger.warning(f"Не удалось удалить файл: {file_path}: {e}")
+
+                # Удаление lock-файла
+                if await async_path_exists(lock_path):
+                    try:
+                        await remove(lock_path)
+                    except Exception as e:
+                        logger.warning(f"Не удалось удалить lock-файл: {lock_path}: {e}")
+        except Exception as e:
+            logger.warning(f"Ошибка при попытке блокировки и удаления: {e}")

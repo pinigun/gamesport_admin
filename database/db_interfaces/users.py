@@ -189,11 +189,17 @@ class UsersDBInterface(BaseInterface):
             ).label("balance")
             balance_transaction_amount = user_data.pop('balance', None)            
             if balance_transaction_amount:
+                if balance_case + balance_transaction_amount >= 0:
+                    amount = balance_transaction_amount if balance_transaction_amount > 0 else -balance_transaction_amount
+                    transaction_type = 'IN' if balance_transaction_amount > 0 else 'OUT'
+                else:
+                    amount = balance_case
+                    transaction_type = 'OUT'
                 new_history_record=UserBalanceHistory(
                     user_id=user_id,
-                    type='IN' if balance_transaction_amount > 0 else 'OUT',
+                    type=transaction_type,
                     reason='Changed by administrator',
-                    amount=balance_transaction_amount if balance_transaction_amount > 0 else -balance_transaction_amount,
+                    amount=amount,
                     created_at=datetime.now()
                 )
                 session.add(new_history_record)
@@ -349,7 +355,7 @@ class UsersDBInterface(BaseInterface):
                 case(
                     (UserBalanceHistory.type == "IN", UserBalanceHistory.amount),
                     else_=-UserBalanceHistory.amount
-                )
+                ).distinct()
             ).label("balance")
 
             giveaways_count = func.count(distinct(GiveawayParticipant.id)).label("giveaways_count")
