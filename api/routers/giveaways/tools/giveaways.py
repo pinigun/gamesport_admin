@@ -98,9 +98,13 @@ class GiveawaysTools:
     
     async def add_prizes(
         giveaway_id: int,
-        prizes_data: list[dict],
+        prizes_data: list[Prize],
         prizes_photos: list[UploadFile]
     ):
+        prizes_data: list[dict] = [
+            prize.model_dump(exclude=['id'])
+            for prize in prizes_data.prizes
+        ]
         prizes=await db.giveaways.add_prizes(
             giveaway_id=giveaway_id,
             prizes_data=prizes_data
@@ -125,22 +129,15 @@ class GiveawaysTools:
     
     
     async def add(**new_giveaway_data) -> Giveaway:
-        prizes_data: list[dict] = [
-            prize.model_dump(exclude=['id'])
-            for prize in new_giveaway_data.pop('prizes_data').prizes
-        ]
-        logger.debug(f'{type(prizes_data)=} {prizes_data=}')
-        prizes_photos: list[UploadFile] = new_giveaway_data.pop('prizes_photos')
         new_giveaway = await db.giveaways.add(**new_giveaway_data)
         
         await GiveawaysTools.add_prizes(
             giveaway_id=new_giveaway.id,
-            prizes_data=prizes_data,
-            prizes_photos=prizes_photos,
+            prizes_data=new_giveaway_data.pop('prizes_data'),
+            prizes_photos=new_giveaway_data.pop('prizes_photos'),
         )
         
-        new_info = await db.giveaways.get_all(giveaway_id=new_giveaway.id)
-        return Giveaway(**new_info)
+        return await GiveawaysTools.get(giveaway_id=new_giveaway.id)
         
     
     async def update(giveaway_id: int, **new_giveaway_data):
@@ -150,14 +147,16 @@ class GiveawaysTools:
         new_photos = []
         for i, prize in enumerate(prizes_data):
             if prize.id is not None:
-                new_prizes.append()
-                new_photos.append()
+                new_prizes.append(prize)
+                new_photos.append(prizes_photos[i])
+                
+                
+        
         await db.giveaways.update(
             giveaway_id=giveaway_id,
             **{key: value for key, value in new_giveaway_data.items() if value is not None}
         )
-        new_info = await db.giveaways.get_all(giveaway_id=giveaway_id)
-        return Giveaway(**new_info)
+        return await GiveawaysTools.get(giveaway_id=giveaway_id)
     
     
     async def get(giveaway_id: int) -> Giveaway:
