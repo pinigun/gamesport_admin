@@ -362,9 +362,9 @@ class UsersDBInterface(BaseInterface):
             if min_balance is not None or max_balance is not None:
                 having_conditions = []
                 if min_balance is not None:
-                    having_conditions.append(balance_case >= min_balance)
+                    having_conditions.append(balance_subq.c.balance >= min_balance)
                 if max_balance is not None:
-                    having_conditions.append(balance_case <= max_balance)
+                    having_conditions.append(balance_subq.c.balance <= max_balance)
                 query = query.having(and_(*having_conditions))
 
             # подписка фильтр
