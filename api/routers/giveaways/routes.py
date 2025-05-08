@@ -113,7 +113,7 @@ async def get_giveaway(
         raise HTTPException(status_code=400, detail=ex.message)
 
 
-@router.post('/prizes/{giveaway_id}', tags=['Giveaways.Prizes'], include_in_schema=False)
+@router.post('/prizes/{giveaway_id}', tags=['Giveaways.Prizes'])
 async def add_prizes(
     giveaway_id: int,
     name:   list[str] = Form(),
