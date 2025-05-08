@@ -149,13 +149,18 @@ class GiveawaysTools:
         logger.debug(f"{prizes_photos=}")
         new_prizes = []
         new_photos = []
+        old_prizes = []
+        old_photos = []
         for i, prize in enumerate(prizes_data):
             if prize.id is None:
                 new_prizes.append(prize)
                 new_photos.append(prizes_photos[i])
-                
-        prizes_data = list(set(prizes_data) - set(new_prizes))
-        prizes_photos = list(set(prizes_photos) - set(new_photos))            
+            else:
+                old_prizes.append(prize)
+                old_photos.append(prizes_photos[i])
+        
+        prizes_data = old_prizes
+        prizes_photos = old_photos
                     
         curr_giveaway_prizes = {
             prize['id']: prize
