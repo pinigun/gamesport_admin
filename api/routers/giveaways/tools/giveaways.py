@@ -154,8 +154,8 @@ class GiveawaysTools:
                 new_prizes.append(prize)
                 new_photos.append(prizes_photos[i])
                 
-                prizes_data.pop(i)
-                prizes_photos.pop(i)
+        prizes_data = list(set(prizes_data) - set(new_prizes))
+        prizes_photos = list(set(prizes_photos) - set(new_photos))            
                     
         curr_giveaway_prizes = {
             prize['id']: prize
