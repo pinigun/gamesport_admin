@@ -203,6 +203,7 @@ class GiveawaysDBInterface(BaseInterface):
                     from giveaways_ended ge1
                 )
                 select
+                    g.id,
                     coalesce(
                         case
                             when g.start_date > ge.end_date then

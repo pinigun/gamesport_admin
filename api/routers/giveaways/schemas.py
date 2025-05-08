@@ -45,6 +45,7 @@ class GiveawaysRecordsTypes(str, Enum):
     
 
 class GiveawayHistoryRecord(BaseModel):
+    id:                 int
     start_date:         str | None
     end_date:           str | None
     number:             int
