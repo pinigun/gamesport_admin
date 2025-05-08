@@ -2,11 +2,19 @@ from asyncio import to_thread
 import os
 import shutil
 import aiofiles
-from aiofiles.os import remove, listdir
+from aiofiles.os import remove, listdir, stat
 from fastapi import UploadFile
 from filelock import AsyncFileLock
 from pathlib import Path
 from loguru import logger
+
+
+async def async_path_exists(path: str) -> bool:
+    try:
+        await stat(path)
+        return True
+    except FileNotFoundError:
+        return False
 
 
 class PhotoTools:

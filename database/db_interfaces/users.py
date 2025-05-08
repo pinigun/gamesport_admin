@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 import hashlib
 from typing import Literal, TypedDict
-from sqlalchemy import and_, case, desc, distinct, exists, func, or_, select, update
+from sqlalchemy import and_, case, desc, distinct, exists, func, or_, select, text, update
 from sqlalchemy.orm import aliased
 from database.db_interface import BaseInterface
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -181,17 +181,21 @@ class UsersDBInterface(BaseInterface):
     
     async def update_user(self, user_id: int, user_data: dict):
         async with self.async_ses() as session:
-            balance_case = func.sum(
-                case(
-                    (UserBalanceHistory.type == "IN", UserBalanceHistory.amount),
-                    else_=-UserBalanceHistory.amount
-                )
-            ).label("balance")
-            current_balance = await session.scalar(balance_case)
-            balance_transaction_amount = user_data.pop('balance', None)  
+            current_balance = await session.scalar(text("""
+                SELECT 
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN type = 'IN' THEN amount
+                            ELSE -amount
+                        END
+                    ), 0) AS balance
+                FROM users_balances_history
+                WHERE user_id = :user_id
+            """), {"user_id": user_id})
             logger.debug(current_balance)          
+            balance_transaction_amount = user_data.pop('balance', None)  
             if balance_transaction_amount:
-                if balance_case + current_balance >= 0:
+                if balance_transaction_amount + current_balance >= 0:
                     amount = balance_transaction_amount if balance_transaction_amount > 0 else -balance_transaction_amount
                     transaction_type = 'IN' if balance_transaction_amount > 0 else 'OUT'
                 else:
@@ -204,140 +208,27 @@ class UsersDBInterface(BaseInterface):
                     amount=amount,
                     created_at=datetime.now()
                 )
+                logger.debug(new_history_record.__dict__)
                 session.add(new_history_record)
             password = user_data.pop('password', None)
             if password:
                 user_data['hashed_password'] = hashlib.md5(password.encode()).hexdigest()
+              
                 
-                
-            row = await session.execute(
-                update(User)
-                .filter_by(id=user_id)
-                .values(**user_data)
-                .returning(User)
-            )
+            if user_data:  
+                row = await session.execute(
+                    update(User)
+                    .filter_by(id=user_id)
+                    .values(**user_data)
+                    .returning(User)
+                )
+                await session.refresh(row.scalar())
+            
             await session.commit()
-            await session.refresh(row.scalar())
+         
             
-            balance_case = func.sum(
-                case(
-                    (UserBalanceHistory.type == "IN", UserBalanceHistory.amount),
-                    else_=-UserBalanceHistory.amount
-                )
-            ).label("balance")
-
-            giveaways_count = func.count(distinct(GiveawayParticipant.id)).label("giveaways_count")
-            UserAlias = aliased(User)
-            referals_count_subquery = (
-                select(
-                    UserAlias.referrer_id,
-                    func.count(UserAlias.id).label("referals_count")
-                )
-                .group_by(UserAlias.referrer_id)
-                .alias("referals_count_subquery")
-            )
-
-            # Подсчёт фактических выполнений задач пользователем
-            user_task_completions_subq = (
-                select(
-                    UserTaskComplete.task_template_id,
-                    UserTaskComplete.user_id,
-                    func.count(UserTaskComplete.user_id).label('user_completed_count')
-                )
-                .join(TaskTemplate, TaskTemplate.id == UserTaskComplete.task_template_id)
-                .group_by(UserTaskComplete.task_template_id, UserTaskComplete.user_id)
-            )
-            
-            # if task_id
-            
-            # Дополняем данными о требуемых выполнениях
-            user_task_completion_with_requirements_subq = (
-                select(
-                    user_task_completions_subq.c.user_id,
-                    user_task_completions_subq.c.task_template_id,
-                    user_task_completions_subq.c.user_completed_count,
-                    TaskTemplate.complete_count
-                )
-                .join(TaskTemplate, TaskTemplate.id == user_task_completions_subq.c.task_template_id)
-                .subquery()
-            )
-
-            # Считаем, сколько тасок реально закрыто полностью у каждого пользователя
-            fully_completed_tasks_by_user_subq = (
-                select(
-                    user_task_completion_with_requirements_subq.c.user_id.label('user_id'),
-                    func.count(user_task_completion_with_requirements_subq.c.user_id).label('completed_tasks')
-                )
-                .where(
-                    user_task_completion_with_requirements_subq.c.user_completed_count == user_task_completion_with_requirements_subq.c.complete_count
-                )
-                .group_by(user_task_completion_with_requirements_subq.c.user_id)
-                .subquery()
-            )
-            query = (
-                select(
-                    User.id,
-                    User.gs_id,
-                    User.created_at,
-                    User.tg_id,
-                    User.username,
-                    User.vk_id,
-                    User.email,
-                    User.deleted,
-                    balance_case,
-                    giveaways_count,
-                    func.coalesce(fully_completed_tasks_by_user_subq.c.completed_tasks, 0).label('completed_tasks'),
-                    func.coalesce(referals_count_subquery.c.referals_count, 0).label('referals_count'),
-                    UserSubscription.lite,
-                    UserSubscription.pro
-                )
-                .outerjoin(UserBalanceHistory, User.id == UserBalanceHistory.user_id)
-                .outerjoin(UserSubscription, User.id == UserSubscription.user_id)
-                .outerjoin(GiveawayParticipant, User.id == GiveawayParticipant.user_id)
-                .outerjoin(
-                    referals_count_subquery,  # Явное соединение с подзапросом referals_count_subquery
-                    referals_count_subquery.c.referrer_id == User.id
-                )
-                .outerjoin(
-                    fully_completed_tasks_by_user_subq,  # Явное соединение с подзапросом referals_count_subquery
-                    fully_completed_tasks_by_user_subq.c.user_id == User.id
-                )
-                .group_by(
-                    User.id, 
-                    User.created_at,
-                    User.tg_id,
-                    User.username,
-                    User.vk_id,
-                    User.email,
-                    User.deleted,
-                    UserSubscription.lite,
-                    UserSubscription.pro,
-                    referals_count_subquery.c.referals_count,
-                    fully_completed_tasks_by_user_subq.c.completed_tasks
-                )
-            )
-            result = await session.execute(
-                query
-                .where(User.id==user_id)
-                .order_by(User.id)
-            )
-            row = result.one()
-            
-            return UserData(
-                id=row.id,
-                gs_id=row.gs_id,
-                created_at=row.created_at,
-                tg_id=row.tg_id,
-                username=row.username,
-                vk_id=row.vk_id,
-                email=row.email,
-                balance=row.balance,
-                giveaways_count=row.giveaways_count,
-                referals_count=row.referals_count,
-                completed_tasks=row.completed_tasks, 
-                gs_subscription=self._map_subs(row.lite, row.pro),
-                deleted=row.deleted
-            )
+        return (await self.get_all(page=1, per_page=1, id=user_id))[0]
+    
     
     async def get_all(
         self,
@@ -353,12 +244,19 @@ class UsersDBInterface(BaseInterface):
         **another_filters
     ) -> list[UserData]:
         async with self.async_ses() as session:
-            balance_case = func.sum(
-                case(
-                    (UserBalanceHistory.type == "IN", UserBalanceHistory.amount),
-                    else_=-UserBalanceHistory.amount
-                ).distinct()
-            ).label("balance")
+            balance_subq = (
+                select(
+                    UserBalanceHistory.user_id,
+                    func.sum(
+                        case(
+                            (UserBalanceHistory.type == "IN", UserBalanceHistory.amount),
+                            else_=-UserBalanceHistory.amount
+                        )
+                    ).label("balance")
+                )
+                .group_by(UserBalanceHistory.user_id)
+                .subquery()
+            )
 
             giveaways_count = func.count(distinct(GiveawayParticipant.id)).label("giveaways_count")
             UserAlias = aliased(User)
@@ -419,8 +317,8 @@ class UsersDBInterface(BaseInterface):
                     User.vk_id,
                     User.email,
                     User.deleted,
-                    balance_case,
                     giveaways_count,
+                    func.coalesce(balance_subq.c.balance, 0).label("balance"),
                     func.coalesce(fully_completed_tasks_by_user_subq.c.completed_tasks, 0).label('completed_tasks'),
                     func.coalesce(referals_count_subquery.c.referals_count, 0).label('referals_count'),
                     UserSubscription.lite,
@@ -437,6 +335,7 @@ class UsersDBInterface(BaseInterface):
                     fully_completed_tasks_by_user_subq,  # Явное соединение с подзапросом referals_count_subquery
                     fully_completed_tasks_by_user_subq.c.user_id == User.id
                 )
+                .outerjoin(balance_subq, balance_subq.c.user_id == User.id)
                 .group_by(
                     User.id, 
                     User.created_at,
@@ -447,6 +346,7 @@ class UsersDBInterface(BaseInterface):
                     User.deleted,
                     UserSubscription.lite,
                     UserSubscription.pro,
+                    balance_subq.c.balance,
                     referals_count_subquery.c.referals_count,
                     fully_completed_tasks_by_user_subq.c.completed_tasks
                 )

@@ -67,12 +67,11 @@ async def edit_user(
     user_id: int,
     user_data: EditUserRequest
 ) -> UserResponse:
+    
     try:
         return await UsersTools.update(user_id, user_data)
     except CustomDBExceptions as ex:
         raise HTTPException(status_code=400, detail=ex.message)
-    except Exception as ex:
-        logger.debug('test')
 
 
 @router.get('/{user_id}')

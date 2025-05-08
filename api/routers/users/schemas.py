@@ -7,12 +7,12 @@ from config import FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
 
 
 class EditUserRequest(BaseModel):
-    tg_id:              str | None = None
-    vk_id:              str | None = None
-    email:              str | None = None
-    balance:            float | None = None
-    deleted:            bool | None = None
-    password:           str | None = None
+    tg_id:      str | None = None
+    vk_id:      str | None = None
+    email:      str | None = None
+    balance:    float | None = None
+    deleted:    bool | None = None
+    password:   str | None = None
 
 
 class UserResponse(BaseModel):
@@ -34,24 +34,19 @@ class UserResponse(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
     
-    @field_validator("created_at")
-    def validate_login(cls, value: str | datetime):
-        if isinstance(value, datetime):
-            return value.strftime(format=f"{FRONT_DATE_FORMAT} {FRONT_TIME_FORMAT}")
-        return value
-    
     @model_validator(mode='before')
     def model_validate(cls, values):
-        created_at = values.get('created_at')
-        
-        # Преобразование created_at в datetime, если это строка
-        if isinstance(created_at, str):
-            created_at = datetime.fromisoformat(created_at)
-        
-        # Вычисление days_in_project
-        days_in_project = (datetime.now() - created_at).days
-        
-        values['days_in_project'] = days_in_project
+        if values is not None:
+            created_at = values.get('created_at')
+            
+            # Преобразование created_at в datetime, если это строка
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at)
+            
+            # Вычисление days_in_project
+            days_in_project = (datetime.now() - created_at).days
+            
+            values['days_in_project'] = days_in_project
         
         return values
     

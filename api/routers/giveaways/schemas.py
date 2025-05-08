@@ -12,6 +12,7 @@ class GiveawayPrize(BaseModel):
     id: int
     name: str | None
     photo: str | None
+    position: int | None
     
     model_config = ConfigDict(from_attributes=True)
 

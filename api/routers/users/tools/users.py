@@ -54,6 +54,7 @@ class UsersTools:
     
     async def get(user_id) -> UserResponse:
         result = await db.users.get_all(page=1, per_page=1, id=user_id)
+        logger.debug(result)
         if not result:
             raise UserNotFound
         return UserResponse.model_validate(result[0])
