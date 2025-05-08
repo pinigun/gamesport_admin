@@ -57,28 +57,20 @@ class GiveawaysDBInterface(BaseInterface):
     ):
         async with self.async_ses() as session:
             query = f'''
-                select 
+                select distinct on (gp.user_id)
                     gp.user_id as id,
                     u.email,
                     u.phone,
                     u.tg_id,
                     u.vk_id,
-                    gp2.id as prize_id,
-                    gp2.name as prize_name
+                    ge.prize_id,
+                    gpz.name as prize_name
                 from giveaways_participant gp 
                 left join users u on u.id = gp.user_id
-                left join giveaways g on g.id = gp.giveaway_id
-                left join giveaways_ended ge on ge.giveaway_id = gp.giveaway_id
-                left join giveaways_prizes gp2 on gp2.giveaway_id = gp.giveaway_id
-                where gp.giveaway_id = :giveaway_id {"and :start_date <= gp.created_at" if start_date else ''} {"and gp.created_at <= :end_date" if end_date else ''}
-                group by
-                    gp.user_id,
-                    u.email,
-                    u.phone,
-                    u.tg_id,
-                    u.vk_id,
-                    gp2.id,
-                    gp2.name
+                left join giveaways_ended ge on ge.giveaway_id = gp.giveaway_id and ge.winner_id = gp.user_id
+                left join giveaways_prizes gpz on gpz.id = ge.prize_id
+                where gp.giveaway_id = :giveaway_id 
+                    {"and :start_date <= gp.created_at" if start_date else ''} {"and gp.created_at <= :end_date" if end_date else ''}
                 offset :offset
                 limit :limit
             '''
