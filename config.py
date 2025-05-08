@@ -8,3 +8,4 @@ GS_DATE_FORMAT: str = "%Y-%m-%d"
 FRONT_DATE_FORMAT: str = "%Y-%m-%d"
 FRONT_TIME_FORMAT: str = "%H:%M"
 BASE_ADMIN_URL: str = os.getenv("BASE_ADMIN_URL", "127.0.0.1:8000")
+TG_BOT_TOKEN: str = os.getenv("TG_BOT_TOKEN")

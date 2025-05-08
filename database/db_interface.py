@@ -18,6 +18,8 @@ class BaseInterface:
         self.base базовый класс моделей с которыми будете работать.
         """
         if not session_:
+            if not db_url:
+                raise ValueError('db_url is required for Class DBInterface if session_ is None')
             self.engine = create_async_engine(db_url, pool_timeout=60, pool_size=900, max_overflow=100)
             self.async_ses = async_sessionmaker(bind=self.engine, class_=AsyncSession, expire_on_commit=False)
         else:

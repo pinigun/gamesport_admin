@@ -2,7 +2,7 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Any, Literal, Optional
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from database.models import Giveaway as GivewayDBModel
 import json
 from config import BASE_ADMIN_URL
@@ -92,38 +92,55 @@ class Giveaway(BaseModel):
     period_days:        Optional[int] = None
     name:               str
     price:              int
-    active:             bool
+    active:             str
     winner_id:          Optional[int] = None
     participants_count: int = 0
     spent_tickets:      int = 0
     
     model_config = ConfigDict(from_attributes=True, extra='allow')
 
+
     @model_validator(mode='before')
     def validation(cls, values):
         if isinstance(values, GivewayDBModel):
             start_date = values.start_date
-            if start_date:
-                try:
-                    # Форматируем в новый формат
-                    values.start_date = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    raise ValueError(f"Invalid start_date format: {start_date}")
+            end_date = values.end_date
         elif isinstance(values, dict):
             start_date = values.get('start_date')
             end_date = values.get("end_date")
-            if start_date:
-                try:
-                    # Форматируем в новый формат
-                    values['start_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    raise ValueError(f"Invalid start_date format: {start_date}")
-            if end_date:
-                try:
-                    # Форматируем в новый формат
-                    values['end_date'] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    raise ValueError(f"Invalid end_date format: {end_date}")
+        
+        if end_date is None:
+            if start_date.replace(tzinfo=None) > datetime.now().replace(tzinfo=None):
+                active = GiveawaysRecordsTypes.PENDING
+            else:
+                active = GiveawaysRecordsTypes.RUNNING
+        else:
+            active  = GiveawaysRecordsTypes.FINISHED
+            
+            
+        if isinstance(values, GivewayDBModel):
+            values.active = active
+        elif isinstance(values, dict):
+            values['active'] = active
+        
+        
+        if start_date:
+            try:
+                # Форматируем в новый формат
+                if isinstance(values, GivewayDBModel):
+                    values.start_date = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
+                else:
+                    values["start_date"] = datetime.strftime(start_date, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                raise ValueError(f"Invalid start_date format: {start_date}")
+        if end_date:
+            try:
+                if isinstance(values, GivewayDBModel):
+                    values.end_date = datetime.strftime(end_date, "%Y-%m-%d %H:%M:%S")
+                else:
+                    values["end_date"] = datetime.strftime(end_date, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                raise ValueError(f"Invalid end_date format: {end_date}")
         return values
 
 

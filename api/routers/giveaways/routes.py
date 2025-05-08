@@ -46,6 +46,8 @@ async def add_giveaway(
     prizes_data = PrizesData.model_validate(prizes_data)
     if len(prizes_data.prizes) != len(prizes_photos):
         raise HTTPException(400, detail="Bad request: len(prizes_data.prizes must be equal to len(prizes_photos).")
+    if len(prizes_photos) < 3:
+        raise HTTPException(400, detail="Bad request: Min length prizes_photos and prizes_data is 3")
     return await GiveawaysTools.add(
         name=name,
         active=active,
@@ -71,6 +73,8 @@ async def edit_giveaway(
     prizes_data = PrizesData.model_validate(prizes_data)
     if len(prizes_data.prizes) != len(prizes_photos):
         raise HTTPException(400, detail="Bad request: len(prizes_data.prizes must be equal to len(prizes_photos).")
+    if len(prizes_photos) < 3:
+        raise HTTPException(400, detail="Bad request: Min length prizes_photos and prizes_data is 3")
     try:
         return await GiveawaysTools.update(
             giveaway_id=    giveaway_id,
@@ -185,9 +189,9 @@ async def get_giveaway_participtants(
    
 @router.get('/participants/report/{giveaway_id}', tags=['Giveaways.Participants'])
 async def get_giveaway_participtants_report(
-    giveaway_id: int,
+    giveaway_id:int,
     start_date: datetime | None = None,
-    end_date: datetime | None = None,
+    end_date:   datetime | None = None,
     page:       int = Query(1, gt=0),
     per_page:   int = Query(10, gt=0)
 ) -> GivewayParticipantsData:

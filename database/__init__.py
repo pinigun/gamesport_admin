@@ -1,13 +1,14 @@
 import asyncio
 from config import DB_URL
 from database.db_interfaces.dashboars import DashboardsDBInterface
-from database.db_interfaces.giveaways import GiveawaysDBInterface
 from database.db_interfaces.tasks import TasksDBInterface
 from .db_interface import BaseInterface
 from .db_interfaces.faq import FAQDBInterface
 from .db_interfaces.users import UsersDBInterface
 from .db_interfaces.admins import AdminsDBInterface
 from .db_interfaces.statistics import StatisticsDBInterface
+from .db_interfaces.giveaways import GiveawaysDBInterface
+from .db_interfaces.campaigns import CampaignsDBInterface 
 
 
 class DBInterface(BaseInterface):
@@ -18,6 +19,7 @@ class DBInterface(BaseInterface):
         self.tasks = TasksDBInterface(session_=self.async_ses)
         self.admins = AdminsDBInterface(session_=self.async_ses)
         self.giveaways = GiveawaysDBInterface(session_=self.async_ses)
+        self.campaigns = CampaignsDBInterface(session_=self.async_ses)
         self.dashboards = DashboardsDBInterface(session_=self.async_ses)
         self.statistics = StatisticsDBInterface(session_=self.async_ses)
     

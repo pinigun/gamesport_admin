@@ -4,7 +4,7 @@ import os
 from typing import Any
 
 from sqlalchemy import CheckConstraint, ForeignKey, Interval, String, DateTime, Boolean, Integer, Float, True_
-from sqlalchemy.dialects.postgresql import BYTEA
+from sqlalchemy.dialects.postgresql import BYTEA, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from config import DATE_FORMAT
@@ -417,8 +417,8 @@ class AdminRoleLink(Base):
     '''
     __tablename__ = "admin_roles_link"
 
-    admin_id: Mapped[int] = mapped_column(ForeignKey("admins.id", ondelete='CASCADE'), primary_key=True)
-    role_id: Mapped[int] = mapped_column(ForeignKey("admin_roles.id", ondelete='CASCADE'), primary_key=True)
+    admin_id:   Mapped[int] = mapped_column(ForeignKey("admins.id", ondelete='CASCADE'), primary_key=True)
+    role_id:    Mapped[int] = mapped_column(ForeignKey("admin_roles.id", ondelete='CASCADE'), primary_key=True)
 
 
 class AdminRolePermissions(Base):
@@ -500,3 +500,47 @@ class BalanceReasons(str, Enum):
     task_was_completed =        'Completed Task'
         
         
+class Campaign(Base):
+    __tablename__ = 'campaigns'
+    
+    id:                 Mapped[int] = mapped_column(Integer, primary_key=True)
+    name:               Mapped[str] = mapped_column(String, nullable=False)
+    type:               Mapped[str] = mapped_column(String, nullable=False)
+    title:              Mapped[str] = mapped_column(String, nullable=True)
+    text:               Mapped[str] = mapped_column(String, nullable=False)
+    button_text:        Mapped[str] = mapped_column(String, nullable=True)
+    button_url:         Mapped[str] = mapped_column(String, nullable=True)
+    timer:              Mapped[timedelta] = mapped_column(Interval, nullable=True)
+    
+    shedulet_at:        Mapped[datetime] = mapped_column(DateTime)
+    
+    # Связь с рассылками через промежуточную таблицу campaigns_triggers_link
+    triggers: Mapped[list["CampaignTrigger"]] = relationship(
+        "CampaignTrigger",
+        secondary="campaigns_triggers_link",
+        back_populates="campaigns"
+    )
+
+
+class CampaignTrigger(Base):
+    __tablename__ = 'campaigns_triggers'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    params: Mapped[dict] = mapped_column(JSONB, nullable=True)
+    
+    # Связь с триггерами через промежуточную таблицу campaigns_triggers_link
+    campaigns: Mapped[list["Campaign"]] = relationship(
+        "Campaign",
+        secondary="campaigns_triggers_link",
+        back_populates="triggers"
+    )
+    
+    
+class CampaignTriggerLink(Base):
+    __tablename__ = 'campaigns_triggers_link'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    campaign_id: Mapped[int] = mapped_column(Integer, ForeignKey("campaigns.id", ondelete='CASCADE'))
+    trigger_id: Mapped[int] = mapped_column(Integer, ForeignKey("campaigns_triggers.id", ondelete='CASCADE'))
+    
