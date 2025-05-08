@@ -179,6 +179,7 @@ class GiveawaysTools:
                     )
                 
         for i, prize in enumerate(prizes_data):
+            logger.debug(f"{prize=}")
             await db.giveaways.update_prize(
                 prize_id = prize.id,
                 giveaway_id=giveaway_id,
