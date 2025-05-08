@@ -187,13 +187,15 @@ class UsersDBInterface(BaseInterface):
                     else_=-UserBalanceHistory.amount
                 )
             ).label("balance")
-            balance_transaction_amount = user_data.pop('balance', None)            
+            current_balance = await session.scalar(balance_case)
+            balance_transaction_amount = user_data.pop('balance', None)  
+            logger.debug(current_balance)          
             if balance_transaction_amount:
-                if balance_case + balance_transaction_amount >= 0:
+                if balance_case + current_balance >= 0:
                     amount = balance_transaction_amount if balance_transaction_amount > 0 else -balance_transaction_amount
                     transaction_type = 'IN' if balance_transaction_amount > 0 else 'OUT'
                 else:
-                    amount = balance_case
+                    amount = current_balance
                     transaction_type = 'OUT'
                 new_history_record=UserBalanceHistory(
                     user_id=user_id,
