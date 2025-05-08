@@ -363,7 +363,7 @@ class GiveawaysDBInterface(BaseInterface):
             giveaway_id=giveaway_id,
             offset=(page-1)*per_page,
             limit=per_page,
-            order_by='postition'
+            order_by='position'
         )
         
         
