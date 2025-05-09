@@ -2,7 +2,9 @@ from datetime import datetime, timedelta
 import json
 from typing import Literal
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+
+from config import BASE_ADMIN_URL
 
 
 class Trigger(BaseModel):
@@ -42,11 +44,19 @@ class CampaignResponse(BaseModel):
     button_url:         str | None
     photo:              str | None
     timer:              timedelta | None
+    sent:               int = 0
+    received:           int = 0
     is_active:          bool
     shedulet_at:        datetime | None
     triggers:           list[TriggerWithParams]
     
     model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('photo', mode='before')
+    def format_photo_url(cls, value):
+        if value is not None:
+            value = f'{BASE_ADMIN_URL}/{value}'
+        return value
     
 
 class CampaignsData(BaseModel):
