@@ -21,7 +21,7 @@ class CampaignScheduler:
 
 
     async def schedule_campaign(self, campaign: Campaign):
-        job_id = f"campaign_{campaign.id}"
+        job_id = f"{campaign.id}"
         trigger = CronTrigger.from_crontab(campaign.cron_expression) if campaign.type == 'trigger' else DateTrigger(campaign.shedulet_at if campaign.shedulet_at > datetime.now() + timedelta(minutes=1) else datetime.now() + timedelta(minutes=1))
         logger.debug('Запланировали таску')
         self.scheduler.add_job(
@@ -30,16 +30,17 @@ class CampaignScheduler:
             id=job_id,
             replace_existing=True
         )
-
-
-    def remove_campaign(self, campaign_id: int):
-        job_id = f"campaign_{campaign_id}"
-        self.scheduler.remove_job(job_id)
         
     
     async def sync_db(self):
         logger.debug('Запустили синхронизацию')
         campaigns = await db.get_all(is_active=True)
+        current_jobs = self.scheduler.get_jobs()
+        current_campaigns_ids = [str(dict(campaign)["id"]) for campaign in campaign]
+        for job in current_jobs:
+            if job.id not in current_campaigns_ids:
+                self.scheduler.remove_job(str(job.id))
+            
         logger.debug(campaigns)
         for campaign in campaigns:
             campaign = dict(campaign)
