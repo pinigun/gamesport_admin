@@ -87,12 +87,14 @@ class GiveawaysTools:
     
     
     async def get_history(
-        page: int,
-        per_page: int
+        page:               int,
+        per_page:           int,
+        order_by:           str | None,
+        order_direction:    str | None
     ) -> list[GiveawayHistoryRecord]:
         return [
             GiveawayHistoryRecord(**dict(giveaway_hr))
-            for giveaway_hr in await db.giveaways.get_history(page, per_page)
+            for giveaway_hr in await db.giveaways.get_history(page, per_page, order_by, order_direction)
         ]
             
     

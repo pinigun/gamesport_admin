@@ -174,10 +174,19 @@ class GiveawaysDBInterface(BaseInterface):
         return await self.get_rows_count(GiveawayPrize, giveaway_id=giveaway_id)
     
     
-    async def get_history(self, page: int, per_page: int):
+    async def get_history(
+        self,
+        page: int,
+        per_page: int,
+        order_by: str | None,
+        order_direction: str | None 
+    ):
+        order_by = "order by ge.end_date" if order_by else ''
+        if order_direction:
+            order_by += order_direction if order_direction == 'desc' else '' 
         async with self.async_ses() as session:
             result = await session.execute(
-                text('''
+                text(f'''
                 with giveaways_participants_count as (
                     select giveaway_id, count(*) as participants_count
                     from giveaways_participant
@@ -234,7 +243,8 @@ class GiveawaysDBInterface(BaseInterface):
                 group by g.start_date, g.id, ge.end_date, participants.participants_count, g.price
                 offset :offset
                 limit :limit
-                     '''
+                {order_by}
+                '''
                 ),
                 {
                     'offset': (page - 1) * per_page,
@@ -318,8 +328,9 @@ class GiveawaysDBInterface(BaseInterface):
             elif order_by == 'active':
                 order_by = 'g.active'
             logger.debug(order_by)
+            if order_by:
+                query = f'ORDER BY {order_by} {order_direction if order_direction == 'desc' else ''}'
             query += f'''
-                ORDER BY {order_by} {order_direction if order_direction == 'desc' else ''}
                 LIMIT :limit
                 OFFSET :offset
             '''

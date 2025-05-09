@@ -99,8 +99,11 @@ async def edit_giveaway(
 
 @router.get('/history', tags=['Giveaways.History'])
 async def get_giveaways_history(
-    page:       int = Query(1, gt=0),
-    per_page:   int = Query(10, gt=0)
+    page:               int = Query(1, gt=0),
+    per_page:           int = Query(10, gt=0),
+    order_by:           Literal['end_date',] | None= Query(None),
+    order_direction:    Literal['desc', 'asc'] | None = Query(None)
+    
 ) -> GiveawaysHistoryData:
     total_admins = await GiveawaysTools.get_history_count()
     total_pages = math.ceil(total_admins / per_page)
@@ -110,7 +113,12 @@ async def get_giveaways_history(
         total_items=total_admins,
         per_page=per_page,
         current_page=page,
-        items = await GiveawaysTools.get_history(page=page, per_page=per_page) if total_pages else []
+        items = await GiveawaysTools.get_history(
+            page=page,
+            per_page=per_page,
+            order_by=order_by,
+            order_direction=order_direction 
+        ) if total_pages else []
     )
 
 
