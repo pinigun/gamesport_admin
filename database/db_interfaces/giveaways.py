@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import TypedDict
 
+from loguru import logger
 from sqlalchemy.testing.suite import DateTest
 from database.db_interface import BaseInterface
 from database.exceptions import FAQNotFound
@@ -270,7 +271,9 @@ class GiveawaysDBInterface(BaseInterface):
         self,
         page: int = 1,
         per_page: int = 10,
-        giveaway_id: int | None = None
+        giveaway_id: int | None = None,
+        order_by: str | None = None,
+        order_direction: str | None = None
     ):
         async with self.async_ses() as session:
             # Формируем базовый запрос
@@ -308,8 +311,15 @@ class GiveawaysDBInterface(BaseInterface):
             if giveaway_id is not None:
                 query += " WHERE g.id = :giveaway_id"
             
-            query += '''
-                ORDER BY g.id, g.active
+            if order_by == 'id':
+                order_by = 'g.id'
+            elif order_by == 'start_date':
+                order_by = 'g.start_date'
+            elif order_by == 'active':
+                order_by = 'g.active'
+            logger.debug(order_by)
+            query += f'''
+                ORDER BY {order_by} {order_direction if order_direction == 'desc' else ''}
                 LIMIT :limit
                 OFFSET :offset
             '''

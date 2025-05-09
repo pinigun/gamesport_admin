@@ -222,12 +222,16 @@ class GiveawaysTools:
     
     async def get_all(
         page: int,
-        per_page: int
+        per_page: int,
+        order_by: str | None,
+        order_direction: str | None
     ) -> list[Giveaway]:
         return [
             Giveaway.model_validate(dict(giveaway))
             for giveaway in await db.giveaways.get_all(
                 page=page,
-                per_page=per_page
+                per_page=per_page,
+                order_by=order_by,
+                order_direction=order_direction
             )
         ]
