@@ -2,6 +2,7 @@ import asyncio
 
 from loguru import logger
 from campaign_scheduler.campaign_sheduler import CampaignScheduler
+logger.debug('Теееееест')
 
 
 async def main():
