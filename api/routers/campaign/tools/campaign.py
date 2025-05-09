@@ -34,3 +34,19 @@ class CampaignTools:
                 photo=campaign_data.get('photo')
             )
         return CampaignResponse.model_validate(new_campaign)
+    
+    
+    async def update(campaign_id: int, **campaign_data):
+        campaign_data = {key: value for key, value in campaign_data.items() if value is not None and value != ''}
+        photo = campaign_data.pop('photo', None)
+        if photo:
+            campaign_data['photo'] = await PhotoTools.save_photo(
+                path=f"static/campaigns/{campaign_id}",
+                photo=photo
+            )
+        campaign = await db.campaigns.update(
+            campaign_id=campaign_id,
+            **campaign_data
+        )
+        return CampaignResponse.model_validate(campaign)
+        

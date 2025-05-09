@@ -14,11 +14,28 @@ class CampaignsDBInterface(BaseInterface):
 
     
     async def update(self, campaign_id: int, **new_data):
+        triggers = new_data.pop("triggers")
         await self.update_rows(
             Campaign,
             filter_by={'id': campaign_id},
             **new_data
         )
+        
+        await self.delete_rows(
+            CampaignTriggerLink,
+            campaign_id = campaign_id
+        )
+        
+        await self.add_rows(
+            [
+                CampaignTriggerLink(
+                    campaign_id=campaign_id,
+                    trigger_id=trigger_data['id'],
+                    trigger_params=trigger_data.get('trigger_params', None)
+                )
+                for trigger_data in triggers
+            ]
+        )            
         return await self.get_all(campaign_id=campaign_id)
 
 

@@ -213,9 +213,9 @@ class BaseInterface:
         async with session if session else self.async_ses() as session:
             # async with self.locks.get(model, asyncio.Lock()):
             row = await session.execute(
-                update(model)\
-                .filter_by(**filter_by)\
-                .values(**kwargs)\
+                update(model)
+                .filter_by(**filter_by)
+                .values(**kwargs)
                 .returning(model)
             )
 

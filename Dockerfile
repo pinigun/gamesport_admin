@@ -2,13 +2,5 @@ FROM python:3.12-slim-bullseye
 COPY . /app
 WORKDIR /app
 RUN pip install -r requirements.txt
-CMD gunicorn app:app \
-    --workers 6 \
-    --bind 0.0.0.0:8015 \
-    --max-requests 1000 \
-#    --threads 2 \
-    --timeout 30 \
-    --graceful-timeout 30 \
-    --keep-alive 75 \
-    --worker-class uvicorn.workers.UvicornWorker
-
+RUN chmod +x ./start.sh
+CMD ["./start.sh"]
