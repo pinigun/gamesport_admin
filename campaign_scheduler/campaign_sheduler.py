@@ -36,7 +36,7 @@ class CampaignScheduler:
         logger.debug('Запустили синхронизацию')
         campaigns = await db.get_all(is_active=True)
         current_jobs = self.scheduler.get_jobs()
-        current_campaigns_ids = [str(dict(campaign)["id"]) for campaign in campaign]
+        current_campaigns_ids = [str(dict(campaign)["id"]) for campaign in campaigns]
         for job in current_jobs:
             if job.id not in current_campaigns_ids:
                 self.scheduler.remove_job(str(job.id))
