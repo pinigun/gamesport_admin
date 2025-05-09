@@ -1,0 +1,98 @@
+from datetime import datetime
+import math
+from typing import Literal
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from loguru import logger
+
+from api.routers.campaign.schemas import CampaignsData, Trigger, TriggerRequest, TriggersData
+from api.routers.campaign.tools.campaign import CampaignTools
+from api.routers.dashboards.schemas import GeneralStats, GiveawaysGraphStats, GraphStats, TasksGraphStats
+from api.routers.dashboards.tools.dashboards import DashboardsTools
+from api.routers.tasks.schemas import TasksData
+
+
+router = APIRouter(
+    prefix='/campaigns',
+    tags=['Campaigns']
+)
+
+
+@router.get('/')
+async def get_campaigns(
+    page: int = 1,
+    per_page: int = 12,
+) -> CampaignsData:
+    total_items = await CampaignTools.get_count()
+    total_pages = math.ceil(total_items / per_page)
+    
+    return CampaignsData(
+        total_pages=total_pages,
+        total_items=total_items,
+        per_page=per_page,
+        current_page=page,
+        items = await CampaignTools.get_all(page, per_page) if total_pages else []
+    )
+
+    
+@router.post('/campaign')
+async def create_campaign(
+    name: str = Form(...),
+    text: str = Form(...),
+    photo: UploadFile | Literal[''] = File(''),
+    type: Literal['one_time', 'trigger'] = Form(...),
+    title: str | Literal[''] = Form('') ,
+    button_text: str | Literal[''] = Form(''),
+    button_url: str | Literal[''] = Form(''),
+    triggers: TriggersData = Form(...),
+    shedulet_at: datetime | Literal[''] = Form('')
+):
+    logger.debug(triggers)
+    if type == 'one_time':
+        if not shedulet_at:
+            raise HTTPException(400, detail='Bad request: If set type is "one_time" field shedulet_at is required')
+    return await CampaignTools.add(
+        name=name,
+        text=text,
+        photo=photo if photo else None,
+        type=type,
+        title=title if title else None,
+        button_text=button_text if button_text else None,
+        button_url=button_url if button_url else None,
+        triggers=triggers.model_dump()['triggers'],
+        shedulet_at=shedulet_at if shedulet_at else None
+    )
+    
+    
+@router.patch('/{campaign_id}')
+async def create_campaign(
+    campaign_id: int,
+    name: str = Form(...),
+    text: str = Form(...),
+    photo: UploadFile | Literal[''] = File(''),
+    type: Literal['one_time', 'trigger'] = Form(...),
+    title: str | Literal[''] = Form('') ,
+    button_text: str | Literal[''] = Form(''),
+    button_url: str | Literal[''] = Form(''),
+    triggers: TriggersData = Form(...),
+    shedulet_at: datetime | Literal[''] = Form('')
+):
+    logger.debug(triggers)
+    if type == 'one_time':
+        if not shedulet_at:
+            raise HTTPException(400, detail='Bad request: If set type is "one_time" field shedulet_at is required')
+    return await CampaignTools.update(
+        name=name,
+        text=text,
+        photo=photo if photo else None,
+        type=type,
+        title=title if title else None,
+        button_text=button_text if button_text else None,
+        button_url=button_url if button_url else None,
+        triggers=triggers.model_dump()['triggers'],
+        shedulet_at=shedulet_at if shedulet_at else None
+    )
+
+
+@router.get('/triggers')
+async def get_triggers() -> list[Trigger]:
+    return await CampaignTools.get_triggers()

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from enum import Enum
 import os
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy import CheckConstraint, ForeignKey, Interval, String, DateTime, Boolean, Integer, Float, True_
 from sqlalchemy.dialects.postgresql import BYTEA, JSONB
@@ -505,14 +505,15 @@ class Campaign(Base):
     
     id:                 Mapped[int] = mapped_column(Integer, primary_key=True)
     name:               Mapped[str] = mapped_column(String, nullable=False)
-    type:               Mapped[str] = mapped_column(String, nullable=False)
+    type:               Mapped[Literal['one_time', 'trigger']] = mapped_column(String, nullable=False)
     title:              Mapped[str] = mapped_column(String, nullable=True)
     text:               Mapped[str] = mapped_column(String, nullable=False)
     button_text:        Mapped[str] = mapped_column(String, nullable=True)
     button_url:         Mapped[str] = mapped_column(String, nullable=True)
     timer:              Mapped[timedelta] = mapped_column(Interval, nullable=True)
-    
-    shedulet_at:        Mapped[datetime] = mapped_column(DateTime)
+    shedulet_at:        Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    is_active:          Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    photo:              Mapped[str] = mapped_column(String, nullable=True)
     
     # Связь с рассылками через промежуточную таблицу campaigns_triggers_link
     triggers: Mapped[list["CampaignTrigger"]] = relationship(
@@ -527,7 +528,6 @@ class CampaignTrigger(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    params: Mapped[dict] = mapped_column(JSONB, nullable=True)
     
     # Связь с триггерами через промежуточную таблицу campaigns_triggers_link
     campaigns: Mapped[list["Campaign"]] = relationship(
@@ -543,4 +543,5 @@ class CampaignTriggerLink(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     campaign_id: Mapped[int] = mapped_column(Integer, ForeignKey("campaigns.id", ondelete='CASCADE'))
     trigger_id: Mapped[int] = mapped_column(Integer, ForeignKey("campaigns_triggers.id", ondelete='CASCADE'))
+    trigger_params: Mapped[dict] = mapped_column(JSONB, nullable=True)
     
