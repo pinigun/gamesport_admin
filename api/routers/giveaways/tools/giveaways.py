@@ -46,6 +46,7 @@ class GiveawaysTools:
         giveaway_id: int,
         start_date: datetime,
         end_date: datetime | None = None,
+        **kwargs
     ) -> list[GiveawayParticiptant]:
         return [
             GiveawayParticiptant.model_validate(participtant)
@@ -55,6 +56,7 @@ class GiveawaysTools:
                 giveaway_id=giveaway_id,
                 start_date=start_date,
                 end_date=end_date,
+                **kwargs
             )
         ]
         

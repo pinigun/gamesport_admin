@@ -528,6 +528,7 @@ class CampaignTrigger(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
+    trigger_params: Mapped[dict] = mapped_column(JSONB, nullable=True)
     
     # Связь с триггерами через промежуточную таблицу campaigns_triggers_link
     campaigns: Mapped[list["Campaign"]] = relationship(

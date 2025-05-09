@@ -55,6 +55,11 @@ class GiveawaysDBInterface(BaseInterface):
         giveaway_id: int,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
+        vk_id: str | None = None,
+        tg_id: str | None = None,
+        user_id: int | None = None,
+        email: str | None = None,
+        
     ):
         async with self.async_ses() as session:
             query = f'''
@@ -72,6 +77,8 @@ class GiveawaysDBInterface(BaseInterface):
                 left join giveaways_prizes gpz on gpz.id = ge.prize_id
                 where gp.giveaway_id = :giveaway_id 
                     {"and :start_date <= gp.created_at" if start_date else ''} {"and gp.created_at <= :end_date" if end_date else ''}
+                    {"and :vk_id = u.vk_id" if vk_id else ''} {'and :user_id = gp.user_id' if user_id else ''} {'and :tg_id = u.tg_id' if tg_id else ''}
+                    {'and :email = u.email' if email else ''}
                 offset :offset
                 limit :limit
             '''
@@ -80,6 +87,14 @@ class GiveawaysDBInterface(BaseInterface):
                 'offset': (page-1)*per_page,
                 'limit': per_page
             }
+            if vk_id:
+                params['vk_id'] = vk_id
+            if tg_id:
+                params['tg_id'] = tg_id
+            if user_id:
+                params['user_id'] = user_id
+            if email:
+                params['email'] = email
             if end_date:
                 params['end_date'] = end_date
             if start_date:

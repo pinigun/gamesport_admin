@@ -167,11 +167,15 @@ async def get_prizes(
 
 @router.get('/participants/{giveaway_id}', tags=['Giveaways.Participants'])
 async def get_giveaway_participtants(
-    giveaway_id: int,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
-    page:       int = Query(1, gt=0),
-    per_page:   int = Query(10, gt=0)
+    giveaway_id:    int,
+    start_date:     datetime | None = None,
+    end_date:       datetime | None = None,
+    page:           int = Query(1, gt=0),
+    per_page:       int = Query(10, gt=0),
+    vk_id:          str | None = None,
+    tg_id:          str | None = None,
+    user_id:        int | None = None,
+    email:          str | None = None,
 ) -> GivewayParticipantsData:
     if not any((start_date, end_date)): 
         raise HTTPException(400, detail='Bad request: Any data should been is not none')
@@ -195,7 +199,11 @@ async def get_giveaway_participtants(
                 per_page=per_page,
                 start_date=start_date,
                 end_date=end_date,
-                giveaway_id=giveaway_id, 
+                giveaway_id=giveaway_id,
+                vk_id=vk_id,
+                tg_id=tg_id,
+                user_id=user_id,
+                email=email,
                 ) if total_pages else []
         )
     except CustomDBExceptions as ex:

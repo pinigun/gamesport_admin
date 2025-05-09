@@ -10,6 +10,7 @@ from config import BASE_ADMIN_URL
 class Trigger(BaseModel):
     id: int
     name: str
+    trigger_params: dict | None
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -30,6 +31,8 @@ class TriggersData(BaseModel):
     def validation(cls, values):
         if isinstance(values, str):
             values = json.loads(values)
+            for key, value in values.items():
+                values['key'] = None if value == None or not value or value =='null' else value
             logger.debug(type(values))
         return values
     
