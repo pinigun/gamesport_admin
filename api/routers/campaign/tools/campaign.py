@@ -4,6 +4,10 @@ from tools.photos import PhotoTools
 
 
 class CampaignTools:
+    async def delete(campaign_id: int):
+        await db.campaigns.delete(campaign_id)
+    
+    
     async def get_count():
         return await db.campaigns.get_count()
     

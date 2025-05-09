@@ -62,6 +62,12 @@ class GiveawaysDBInterface(BaseInterface):
         
     ):
         async with self.async_ses() as session:
+            search_query = ''
+            search_query += ":vk_id = u.vk_id " if vk_id else ''
+            search_query += f"{'or' if vk_id   is not None else ''}{' :user_id = gp.user_id '}" if user_id else ''
+            search_query += f"{'or' if user_id or vk_id is not None else ''}{' :tg_id = u.tg_id '}" if tg_id else ''
+            search_query += f"{'or' if  user_id or vk_id or tg_id is not None else ''}{' :email = u.email '}" if email else ''
+            
             query = f'''
                 select distinct on (gp.user_id)
                     gp.user_id as id,
@@ -77,11 +83,12 @@ class GiveawaysDBInterface(BaseInterface):
                 left join giveaways_prizes gpz on gpz.id = ge.prize_id
                 where gp.giveaway_id = :giveaway_id 
                     {"and :start_date <= gp.created_at" if start_date else ''} {"and gp.created_at <= :end_date" if end_date else ''}
-                    {"and :vk_id = u.vk_id" if vk_id else ''} {'and :user_id = gp.user_id' if user_id else ''} {'and :tg_id = u.tg_id' if tg_id else ''}
-                    {'and :email = u.email' if email else ''}
+                    {f'and ({search_query})' if any({user_id, vk_id, tg_id, email}) else ''}
                 offset :offset
                 limit :limit
             '''
+            
+            logger.debug(query)
             params = {
                 'giveaway_id': giveaway_id,
                 'offset': (page-1)*per_page,

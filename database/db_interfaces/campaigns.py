@@ -15,7 +15,17 @@ class CampaignsDBInterface(BaseInterface):
         session_: AsyncSession = None
     ):
         super().__init__(db_url=db_url, session_ = session_)
-
+    
+    
+    async def delete(self, campaign_id: int):
+        try:
+            await self.delete_rows(
+                Campaign,
+                id=campaign_id
+            )
+        except NoResultFound:
+            raise CampaignNotFoundException(message=f'Campaign with (id={campaign_id}) is not found')
+    
     
     async def update(self, campaign_id: int, **new_data):
         try:

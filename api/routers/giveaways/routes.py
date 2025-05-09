@@ -168,14 +168,12 @@ async def get_prizes(
 @router.get('/participants/{giveaway_id}', tags=['Giveaways.Participants'])
 async def get_giveaway_participtants(
     giveaway_id:    int,
-    start_date:     datetime | None = None,
-    end_date:       datetime | None = None,
+    start_date:     datetime | None = Query(None),
+    end_date:       datetime | None = Query(None),
     page:           int = Query(1, gt=0),
     per_page:       int = Query(10, gt=0),
-    vk_id:          str | None = None,
-    tg_id:          str | None = None,
-    user_id:        int | None = None,
-    email:          str | None = None,
+    search_params_arr: list[str] | None = Query(None),
+    search_value: str | None = Query(None)
 ) -> GivewayParticipantsData:
     if not any((start_date, end_date)): 
         raise HTTPException(400, detail='Bad request: Any data should been is not none')
@@ -188,7 +186,15 @@ async def get_giveaway_participtants(
             end_date
         )
         total_pages = math.ceil(total_items / per_page)
-        
+        allowed_search_params = {'vk_id',"tg_id","user_id","email"}
+        search_params_arr = set(search_params_arr)
+        if any([search_param not in allowed_search_params for search_param in search_params_arr]):
+            raise HTTPException(400, detail=f'Search params should been in {allowed_search_params}')
+        search_filters = {
+            search_param: int(search_value) if search_param == 'user_id' and search_value.isdigit() else search_value if search_param != 'user_id' else None
+            for search_param in search_params_arr
+        } if search_params_arr and search_value else {}
+        logger.debug(search_filters)
         return GivewayParticipantsData(
             total_pages=total_pages,
             total_items=total_items,
@@ -200,10 +206,7 @@ async def get_giveaway_participtants(
                 start_date=start_date,
                 end_date=end_date,
                 giveaway_id=giveaway_id,
-                vk_id=vk_id,
-                tg_id=tg_id,
-                user_id=user_id,
-                email=email,
+                **search_filters
                 ) if total_pages else []
         )
     except CustomDBExceptions as ex:

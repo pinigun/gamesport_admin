@@ -135,7 +135,7 @@ class GiveawaysTools:
     async def add(**new_giveaway_data) -> Giveaway:
         prizes_data=new_giveaway_data.pop('prizes_data').prizes
         prizes_photos=new_giveaway_data.pop('prizes_photos')
-        new_giveaway = await db.giveaways.add(**new_giveaway_data)
+        new_giveaway = await db.giveaways.add(**new_giveaway_data) 
         
         await GiveawaysTools.add_prizes(
             giveaway_id=new_giveaway.id,

@@ -2,6 +2,7 @@ from datetime import datetime
 import math
 from typing import Literal
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
 from loguru import logger
 
 from api.routers.campaign.schemas import CampaignsData, Trigger, TriggerRequest, TriggersData
@@ -100,6 +101,16 @@ async def edit_campaign(
         )
     except CustomDBExceptions as ex:
         raise HTTPException(400, detail=ex.message)
+
+
+@router.delete('/{campaign_id}')
+async def delete_campaign(campaign_id: int):
+    try:
+        await CampaignTools.delete(campaign_id)
+        return JSONResponse(content={'detail': 'success'})
+    except CustomDBExceptions as ex:
+        raise HTTPException(400, detail=ex.message)
+
 
 @router.get('/triggers')
 async def get_triggers() -> list[Trigger]:
