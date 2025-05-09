@@ -183,7 +183,7 @@ class GiveawaysDBInterface(BaseInterface):
     ):
         order_by = "order by ge.end_date" if order_by else ''
         if order_direction:
-            order_by += order_direction if order_direction == 'desc' else '' 
+            order_by = f"{order_by} {order_direction if order_direction == 'desc' else ''}"
         async with self.async_ses() as session:
             result = await session.execute(
                 text(f'''
@@ -241,9 +241,9 @@ class GiveawaysDBInterface(BaseInterface):
                 left join users u on ge.winner_id = u.id
                 left join giveaways_prizes gp on gp.id = ge.prize_id
                 group by g.start_date, g.id, ge.end_date, participants.participants_count, g.price
+                {order_by}
                 offset :offset
                 limit :limit
-                {order_by}
                 '''
                 ),
                 {
@@ -329,7 +329,7 @@ class GiveawaysDBInterface(BaseInterface):
                 order_by = 'g.active'
             logger.debug(order_by)
             if order_by:
-                query = f'ORDER BY {order_by} {order_direction if order_direction == 'desc' else ''}'
+                query += f'ORDER BY {order_by} {order_direction if order_direction == 'desc' else ''}'
             query += f'''
                 LIMIT :limit
                 OFFSET :offset

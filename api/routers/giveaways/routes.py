@@ -101,7 +101,7 @@ async def edit_giveaway(
 async def get_giveaways_history(
     page:               int = Query(1, gt=0),
     per_page:           int = Query(10, gt=0),
-    order_by:           Literal['end_date',] | None= Query(None),
+    order_by:           Literal['end_date',] | None = Query(None),
     order_direction:    Literal['desc', 'asc'] | None = Query(None)
     
 ) -> GiveawaysHistoryData:
