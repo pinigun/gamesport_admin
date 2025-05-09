@@ -218,7 +218,7 @@ class GiveawaysTools:
             await db.giveaways.get_all(giveaway_id=giveaway_id)
         )
         for i, prize in enumerate(result['prizes']):
-            prize['photo'] = f"{BASE_ADMIN_URL}/{prize['photo']}"
+            prize['photo'] = f"{BASE_ADMIN_URL}/{prize['photo']}" if prize['photo'] else None
         return Giveaway.model_validate(
             result
         )

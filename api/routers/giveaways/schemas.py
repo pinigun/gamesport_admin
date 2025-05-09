@@ -5,7 +5,6 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from database.models import Giveaway as GivewayDBModel
 import json
-from config import BASE_ADMIN_URL
 
 
 class GiveawayPrize(BaseModel):

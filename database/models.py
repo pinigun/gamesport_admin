@@ -161,6 +161,7 @@ class User(Base):
             }
         return data
 
+
     def get_photo_path(self):
         photo_path = f'static/user_photos/{self.id}/photo'
         base_path = f'./{photo_path}'
@@ -169,7 +170,6 @@ class User(Base):
             path = f'{photo_path}.{ext}'
             if os.path.exists(path):
                 return f'/api/{path}'
-
 
 
     def get_data(self):
