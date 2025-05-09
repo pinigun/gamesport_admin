@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta
+import sqlalchemy
+from sqlalchemy.dialects.postgresql import asyncpg
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db_interface import BaseInterface, text
+from database.exceptions import CampaignNotFoundException, CustomDBExceptions
 from database.models import Campaign, CampaignTrigger, CampaignTriggerLink
 
 
@@ -14,61 +18,76 @@ class CampaignsDBInterface(BaseInterface):
 
     
     async def update(self, campaign_id: int, **new_data):
-        triggers = new_data.pop("triggers")
-        await self.update_rows(
-            Campaign,
-            filter_by={'id': campaign_id},
-            **new_data
-        )
+        try:
+            triggers = new_data.pop("triggers")
+            await self.update_rows(
+                Campaign,
+                filter_by={'id': campaign_id},
+                **new_data
+            )
+            
+            await self.delete_rows(
+                CampaignTriggerLink,
+                campaign_id = campaign_id
+            )
+            
+            await self.add_rows(
+                [
+                    CampaignTriggerLink(
+                        campaign_id=campaign_id,
+                        trigger_id=trigger_data['id'],
+                        trigger_params=trigger_data.get('trigger_params', None)
+                    )
+                    for trigger_data in triggers
+                ]
+            )
         
-        await self.delete_rows(
-            CampaignTriggerLink,
-            campaign_id = campaign_id
-        )
-        
-        await self.add_rows(
-            [
-                CampaignTriggerLink(
-                    campaign_id=campaign_id,
-                    trigger_id=trigger_data['id'],
-                    trigger_params=trigger_data.get('trigger_params', None)
-                )
-                for trigger_data in triggers
-            ]
-        )            
-        return await self.get_all(campaign_id=campaign_id)
-
-
+            result = await self.get_all(campaign_id=campaign_id)
+        except NoResultFound as ex:
+            raise CampaignNotFoundException(message=f'Campaign with (id={campaign_id}) is not found')
+        except SQLAlchemyError as ex:
+            raise CampaignNotFoundException(message=ex._message())
+        else:
+            return result    
+            
+    
     async def add(self, campaign_data: dict):
         async with self.async_ses() as session:
-            campaign = Campaign(
-                name=campaign_data['name'],
-                type=campaign_data['type'],
-                title=campaign_data.get('title'),
-                text=campaign_data['text'],
-                button_text=campaign_data.get('button_text'),
-                button_url=campaign_data.get('button_url'),
-                timer=campaign_data.get('timer'),
-                shedulet_at=campaign_data['shedulet_at'],
-                is_active=campaign_data.get('is_active', True),
-                photo=campaign_data.get('photo'),
-            )
-            session.add(campaign)
-            await session.commit()
-
-
-            # Создание и добавление триггеров
-            for trigger_data in campaign_data["triggers"]:
-                # Связь кампании с триггером
-                campaign_trigger_link = CampaignTriggerLink(
-                    campaign_id=campaign.id,
-                    trigger_id=trigger_data['id'],
-                    trigger_params=trigger_data.get('trigger_params', None)
+            try:
+                campaign = Campaign(
+                    name=campaign_data['name'],
+                    type=campaign_data['type'],
+                    title=campaign_data.get('title'),
+                    text=campaign_data['text'],
+                    button_text=campaign_data.get('button_text'),
+                    button_url=campaign_data.get('button_url'),
+                    timer=campaign_data.get('timer'),
+                    shedulet_at=campaign_data['shedulet_at'],
+                    is_active=campaign_data.get('is_active', True),
+                    photo=campaign_data.get('photo'),
                 )
-                session.add(campaign_trigger_link)
+                session.add(campaign)
+                await session.commit()
 
-            await session.commit()        
-        return await self.get_all(campaign_id=campaign.id)
+
+                # Создание и добавление триггеров
+                for trigger_data in campaign_data["triggers"]:
+                    # Связь кампании с триггером
+                    campaign_trigger_link = CampaignTriggerLink(
+                        campaign_id=campaign.id,
+                        trigger_id=trigger_data['id'],
+                        trigger_params=trigger_data.get('trigger_params', None)
+                    )
+                    session.add(campaign_trigger_link)
+
+                await session.commit()        
+        
+                result = await self.get_all(campaign_id=campaign.id)
+            except NoResultFound as ex:
+                raise CampaignNotFoundException(message=f'Campaign with (id={campaign.id}) is not found')
+            except SQLAlchemyError as ex:
+                raise CampaignNotFoundException(message=ex._message())
+        return result    
 
 
     async def get_count(self):

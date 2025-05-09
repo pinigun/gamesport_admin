@@ -29,3 +29,13 @@ class FAQNotFound(CustomDBExceptions):
 @dataclass
 class UserNotFound(CustomDBExceptions):
     message: str = "User not found"   
+    
+    
+@dataclass
+class ForeignKeyError(CustomDBExceptions):
+    message: str
+    
+
+@dataclass
+class CampaignNotFoundException(CustomDBExceptions):
+    message: str

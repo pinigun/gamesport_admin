@@ -9,6 +9,7 @@ from api.routers.campaign.tools.campaign import CampaignTools
 from api.routers.dashboards.schemas import GeneralStats, GiveawaysGraphStats, GraphStats, TasksGraphStats
 from api.routers.dashboards.tools.dashboards import DashboardsTools
 from api.routers.tasks.schemas import TasksData
+from database.exceptions import CustomDBExceptions
 
 
 router = APIRouter(
@@ -83,20 +84,22 @@ async def edit_campaign(
     if type == 'one_time':
         if not shedulet_at:
             raise HTTPException(400, detail='Bad request: If set type is "one_time" field shedulet_at is required')
-    return await CampaignTools.update(
-        campaign_id=campaign_id,
-        name=name if name else None,
-        text=text if text else None,
-        photo=photo if photo else None,
-        type=type,
-        is_active=is_active,
-        title=title if title else None,
-        button_text=button_text if button_text else None,
-        button_url=button_url if button_url else None,
-        triggers=triggers.model_dump()['triggers'],
-        shedulet_at=shedulet_at if shedulet_at else None
-    )
-
+    try:
+        return await CampaignTools.update(
+            campaign_id=campaign_id,
+            name=name if name else None,
+            text=text if text else None,
+            photo=photo if photo else None,
+            type=type,
+            is_active=is_active,
+            title=title if title else None,
+            button_text=button_text if button_text else None,
+            button_url=button_url if button_url else None,
+            triggers=triggers.model_dump()['triggers'],
+            shedulet_at=shedulet_at if shedulet_at else None
+        )
+    except CustomDBExceptions as ex:
+        raise HTTPException(400, detail=ex.message)
 
 @router.get('/triggers')
 async def get_triggers() -> list[Trigger]:
