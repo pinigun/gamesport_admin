@@ -14,7 +14,7 @@ class CampaignScheduler:
         self.scheduler.start()
         self.scheduler.add_job(
             self.sync_db,
-            IntervalTrigger(minutes=2),
+            IntervalTrigger(minutes=1),
             id="sync_database",
             replace_existing=True
         )
@@ -38,8 +38,9 @@ class CampaignScheduler:
         current_jobs = self.scheduler.get_jobs()
         current_campaigns_ids = [str(dict(campaign)["id"]) for campaign in campaigns]
         for job in current_jobs:
-            if job.id not in current_campaigns_ids:
-                self.scheduler.remove_job(str(job.id))
+            if job.id != 'sync_database':
+                if job.id not in current_campaigns_ids:
+                    self.scheduler.remove_job(str(job.id))
             
         logger.debug(campaigns)
         for campaign in campaigns:
