@@ -35,7 +35,7 @@ async def get_campaigns(
 
     
 @router.post('/campaign')
-async def create_campaign(
+async def add_campaign(
     name: str = Form(...),
     text: str = Form(...),
     photo: UploadFile | Literal[''] = File(''),
@@ -43,6 +43,7 @@ async def create_campaign(
     title: str | Literal[''] = Form('') ,
     button_text: str | Literal[''] = Form(''),
     button_url: str | Literal[''] = Form(''),
+    is_active: bool = Form(True),
     triggers: TriggersData = Form(...),
     shedulet_at: datetime | Literal[''] = Form('')
 ):
@@ -56,6 +57,7 @@ async def create_campaign(
         photo=photo if photo else None,
         type=type,
         title=title if title else None,
+        is_active=is_active,
         button_text=button_text if button_text else None,
         button_url=button_url if button_url else None,
         triggers=triggers.model_dump()['triggers'],
@@ -64,16 +66,17 @@ async def create_campaign(
     
     
 @router.patch('/{campaign_id}')
-async def create_campaign(
+async def edit_campaign(
     campaign_id: int,
-    name: str = Form(...),
-    text: str = Form(...),
+    name: str = Form(''),
+    text: str = Form(''),
     photo: UploadFile | Literal[''] = File(''),
     type: Literal['one_time', 'trigger'] = Form(...),
     title: str | Literal[''] = Form('') ,
     button_text: str | Literal[''] = Form(''),
     button_url: str | Literal[''] = Form(''),
     triggers: TriggersData = Form(...),
+    is_active: bool = Form(True),
     shedulet_at: datetime | Literal[''] = Form('')
 ):
     logger.debug(triggers)
@@ -81,10 +84,12 @@ async def create_campaign(
         if not shedulet_at:
             raise HTTPException(400, detail='Bad request: If set type is "one_time" field shedulet_at is required')
     return await CampaignTools.update(
-        name=name,
-        text=text,
+        campaign_id=campaign_id,
+        name=name if name else None,
+        text=text if text else None,
         photo=photo if photo else None,
         type=type,
+        is_active=is_active,
         title=title if title else None,
         button_text=button_text if button_text else None,
         button_url=button_url if button_url else None,

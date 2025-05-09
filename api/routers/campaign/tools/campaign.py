@@ -26,7 +26,7 @@ class CampaignTools:
         new_campaign = await db.campaigns.add(campaign_data)
         if photo:
             campaign_data['photo'] = await PhotoTools.save_photo(
-                path="static/campaigns/",
+                path=f"static/campaigns/{new_campaign.id}",
                 photo=photo
             )
             new_campaign = await db.campaigns.update(
