@@ -1,5 +1,6 @@
 from datetime import datetime
 import math
+from typing import Literal
 from fastapi import APIRouter, Depends, Query, HTTPException
 
 from api.routers.auth.tools.auth import AuthTools
@@ -20,9 +21,11 @@ router = APIRouter(
 
 @router.get('/')
 async def get_all_users(
-    page:       int = Query(default=1, gt=0),
-    per_page:   int = Query(default=12, gt=0, max=20),
-    filter:     UserFilters = Depends()
+    page:               int = Query(default=1, gt=0),
+    per_page:           int = Query(default=12, gt=0, max=20),
+    filter:             UserFilters = Depends(),
+    order_by:           Literal['user_id'] = "user_id",
+    order_direction:    Literal['desc', 'asc'] = "asc"
 ) -> UsersData:
     for field in ("created_at_end", "created_at_start"):
         attr = getattr(filter, field)
@@ -47,6 +50,8 @@ async def get_all_users(
         page=page,
         per_page=per_page,
         filter=filter,
+        order_by=order_by,
+        order_direction=order_direction
     )
     
     total_items = await UsersTools.get_count(

@@ -1,3 +1,4 @@
+from typing import Literal
 from loguru import logger
 from dataclasses import field
 from api.routers.users.schemas import EditUserRequest, UserFilters, UserResponse
@@ -32,6 +33,8 @@ class UsersTools:
         page: int,
         per_page: int,
         filter: UserFilters,
+        order_by: str,
+        order_direction: Literal['desc', 'asc'],
         task_id: int | None = None
     ) -> list[UserResponse]:
         searching_fields = ("email", "vk_id", "tg_id")
@@ -46,6 +49,8 @@ class UsersTools:
                 page=page,
                 per_page=per_page,
                 task_id=task_id,
+                order_by=order_by,
+                order_direction=order_direction,
                 **filter.model_dump(exclude=['tg_id', "email", 'vk_id']),
                 **searching_filter,
             )

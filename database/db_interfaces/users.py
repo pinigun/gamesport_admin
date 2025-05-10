@@ -234,6 +234,8 @@ class UsersDBInterface(BaseInterface):
         self,
         page:               int,
         per_page:           int,
+        order_by:           str = 'user_id',
+        order_direction:    Literal['asc', 'desc'] = 'asc',
         created_at_start:   datetime = None,
         created_at_end:     datetime = None,
         min_balance:        int | None = None,
@@ -421,11 +423,15 @@ class UsersDBInterface(BaseInterface):
                         else:
                             query = query.where(attr == value)    
 
+            if order_by == 'user_id':
+                order_by_param = User.id
+            else:
+                order_by_param = User.created_at
             result = await session.execute(
                 query
                 .offset((page - 1) * per_page)
                 .limit(per_page)
-                .order_by(User.created_at.desc())
+                .order_by(order_by_param.desc() if order_direction == 'desc' else order_by_param.asc())
             )
 
             rows = result.all()
