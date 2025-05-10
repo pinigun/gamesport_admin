@@ -167,18 +167,18 @@ async def get_prizes(
 
 @router.get('/participants/{giveaway_id}', tags=['Giveaways.Participants'])
 async def get_giveaway_participtants(
-    giveaway_id:    int,
-    start_date:     datetime | None = Query(None),
-    end_date:       datetime | None = Query(None),
-    page:           int = Query(1, gt=0),
-    per_page:       int = Query(10, gt=0),
-    search_params_arr: list[str] | None = Query(None),
+    giveaway_id:        int,
+    start_date:         datetime | None = Query(None),
+    end_date:           datetime | None = Query(None),
+    page:               int = Query(1, gt=0),
+    per_page:           int = Query(10, gt=0),
+    search_params_arr:  list[str] = Query(..., default_factory=list),
     search_value: str | None = Query(None)
 ) -> GivewayParticipantsData:
     if not any((start_date, end_date)): 
         raise HTTPException(400, detail='Bad request: Any data should been is not none')
     
-    logger.debug
+    logger.debug(search_params_arr)
     try:
         total_items = await GiveawaysTools.get_participants_count(
             giveaway_id,
