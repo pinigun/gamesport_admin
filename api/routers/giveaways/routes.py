@@ -178,7 +178,7 @@ async def get_giveaway_participtants(
     if not any((start_date, end_date)): 
         raise HTTPException(400, detail='Bad request: Any data should been is not none')
     
-    
+    logger.debug
     try:
         total_items = await GiveawaysTools.get_participants_count(
             giveaway_id,
@@ -186,14 +186,21 @@ async def get_giveaway_participtants(
             end_date
         )
         total_pages = math.ceil(total_items / per_page)
-        allowed_search_params = {'vk_id',"tg_id","user_id","email"}
-        search_params_arr = set(search_params_arr)
-        if any([search_param not in allowed_search_params for search_param in search_params_arr]):
-            raise HTTPException(400, detail=f'Search params should been in {allowed_search_params}')
-        search_filters = {
-            search_param: int(search_value) if search_param == 'user_id' and search_value.isdigit() else search_value if search_param != 'user_id' else None
-            for search_param in search_params_arr
-        } if search_params_arr and search_value else {}
+        if search_value and search_params_arr:
+            allowed_search_params = {'vk_id',"tg_id","user_id","email"}
+            search_params_arr = set(search_params_arr)
+            
+            if any([search_param not in allowed_search_params for search_param in search_params_arr]):
+                raise HTTPException(400, detail=f'Search params should been in {allowed_search_params}')
+            
+            search_filters = {
+                search_param: int(search_value) 
+                    if search_param == 'user_id' and search_value.isdigit() 
+                    else search_value if search_param != 'user_id' else None
+                for search_param in search_params_arr
+            }
+        else:
+            search_filters = {}
         logger.debug(search_filters)
         return GivewayParticipantsData(
             total_pages=total_pages,
