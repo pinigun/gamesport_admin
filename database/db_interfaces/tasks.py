@@ -36,7 +36,15 @@ class TasksDBInterface(BaseInterface):
         )
     
     
-    async def get_all(self, page: int, per_page: int, task_id: int | None = None, name: str | None = None):
+    async def get_all(
+        self,
+        page: int,
+        per_page: int,
+        order_by: str = 'task_id',
+        order_direction: str = 'desc',
+        task_id: int | None = None,
+        name: str | None = None
+    ):
         async with self.async_ses() as session:
             query = '''
             with users_completed_tasks AS (
@@ -108,11 +116,21 @@ class TasksDBInterface(BaseInterface):
             elif name:
                 query += f' WHERE tt.title ILIKE :name_pattern'
                 params['name_pattern'] = f"%{name}%"
+            
+            match order_by:
+                case 'task_id':
+                    order_by='tt.id'
+                case 'status':
+                    order_by='tt.active'
+                case _:
+                    order_by='tt.id'
+            query += f'    order by {order_by} {'desc' if order_direction == 'desc' else ''}'
             query += '''
                 offset :offset
-                limit :limit;
+                limit :limit
             '''
             
+            print(query)
             result = await session.execute(text(query), params)
             return result.mappings().all()
         

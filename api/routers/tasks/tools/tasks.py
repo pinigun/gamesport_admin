@@ -62,14 +62,23 @@ class TasksTools:
         return Task(**new_info)
     
     
-    async def get_all(page: int, per_page: int, task_id: int | None, name: str | None) -> list[TasksData]:
+    async def get_all(
+        page: int,
+        per_page: int,
+        task_id: int | None,
+        name: str | None,
+        order_by: str,
+        order_direction: str
+    ) -> list[TasksData]:
         return [
             Task.model_validate(dict(task))
             for task in await db.tasks.get_all(
                 page=page,
                 per_page=per_page,
                 task_id=task_id,
-                name=name
+                name=name,
+                order_by=order_by,
+                order_direction=order_direction
             ) 
         ] 
         

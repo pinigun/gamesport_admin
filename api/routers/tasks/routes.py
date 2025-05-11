@@ -23,6 +23,8 @@ async def get_tasks(
     per_page:   int = Query(10, gt=0),
     task_id:    int | None = None,
     name:       str | None = None,
+    order_by:   Literal['task_id', 'status'] = 'task_id',
+    order_direction:   Literal['desc', 'asc'] = 'desc'
 ) -> TasksData:
     total_items = await TasksTools.get_count()
     total_pages = math.ceil(total_items / per_page)
@@ -36,7 +38,9 @@ async def get_tasks(
             page=page,
             per_page=per_page,
             task_id=task_id,
-            name=name
+            name=name,
+            order_by=order_by,
+            order_direction=order_direction
         ) if total_pages else []
     )
     

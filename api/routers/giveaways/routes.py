@@ -214,7 +214,7 @@ async def get_giveaway_participtants(
                 end_date=end_date,
                 giveaway_id=giveaway_id,
                 **search_filters
-                ) if total_pages else []
+                )
         )
     except CustomDBExceptions as ex:
         raise HTTPException(status_code=400, detail=ex.message)
