@@ -1,3 +1,4 @@
+from loguru import logger
 from api.routers.campaign.schemas import CampaignResponse, Trigger
 from database import db
 from tools.photos import PhotoTools
@@ -25,9 +26,11 @@ class CampaignTools:
             for trigger in await db.campaigns.get_triggers()
         ]
         
+        
     async def add(**campaign_data):
         photo = campaign_data.pop('photo')
         new_campaign = await db.campaigns.add(campaign_data)
+        logger.debug(new_campaign)
         if photo:
             campaign_data['photo'] = await PhotoTools.save_photo(
                 path=f"static/campaigns/{new_campaign.id}",
@@ -35,7 +38,8 @@ class CampaignTools:
             )
             new_campaign = await db.campaigns.update(
                 campaign_id=new_campaign.id,
-                photo=campaign_data.get('photo')
+                photo=campaign_data.get('photo'),
+                triggers=new_campaign.triggers,
             )
         return CampaignResponse.model_validate(new_campaign)
     

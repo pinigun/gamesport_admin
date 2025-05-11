@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from loguru import logger
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import asyncpg
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
@@ -29,36 +30,33 @@ class CampaignsDBInterface(BaseInterface):
     
     async def update(self, campaign_id: int, **new_data):
         try:
-            triggers = new_data.pop("triggers")
+            triggers = new_data.pop("triggers", None)
             await self.update_rows(
                 Campaign,
                 filter_by={'id': campaign_id},
                 **new_data
             )
-            
             await self.delete_rows(
                 CampaignTriggerLink,
                 campaign_id = campaign_id
             )
-            
-            await self.add_rows(
-                [
-                    CampaignTriggerLink(
-                        campaign_id=campaign_id,
-                        trigger_id=trigger_data['id'],
-                        trigger_params=trigger_data.get('trigger_params', None)
-                    )
-                    for trigger_data in triggers
-                ]
-            )
-        
+            if triggers:
+                await self.add_rows(
+                    [
+                        CampaignTriggerLink(
+                            campaign_id=campaign_id,
+                            trigger_id=trigger_data['id'],
+                            trigger_params=trigger_data.get('trigger_params', None)
+                        )
+                        for trigger_data in triggers
+                    ]
+                )
             result = await self.get_all(campaign_id=campaign_id)
         except NoResultFound as ex:
             raise CampaignNotFoundException(message=f'Campaign with (id={campaign_id}) is not found')
         except SQLAlchemyError as ex:
             raise CampaignNotFoundException(message=ex._message())
-        else:
-            return result    
+        return result    
             
     
     async def add(self, campaign_data: dict):

@@ -32,7 +32,7 @@ class TriggersData(BaseModel):
         if isinstance(values, str):
             values = json.loads(values)
             for key, value in values.items():
-                values['key'] = None if value == None or not value or value =='null' else value
+                values[key] = None if value == None or not value or value =='null' else value
             logger.debug(type(values))
         return values
     
