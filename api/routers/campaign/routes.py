@@ -24,6 +24,7 @@ async def get_campaigns(
     page: int = 1,
     per_page: int = 12,
     campaign_id: int | None = None,
+    name: str | None = None,
     is_active: bool | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
@@ -46,7 +47,8 @@ async def get_campaigns(
             campaign_id=campaign_id,
             start_date=start_date,
             end_date=end_date,
-            is_active=is_active
+            is_active=is_active,
+            name=name,
         ) if total_pages else []
     )
 

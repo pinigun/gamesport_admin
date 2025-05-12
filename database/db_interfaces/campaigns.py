@@ -111,7 +111,7 @@ class CampaignsDBInterface(BaseInterface):
     
     async def get_all(
         self,
-        page: int =1,
+        page: int = 1,
         per_page: int = 10,
         order_by: Literal['id'] = "id",
         order_direction: Literal['desc', 'asc'] = 'desc',
@@ -119,6 +119,7 @@ class CampaignsDBInterface(BaseInterface):
         is_active: bool | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
+        name: str | None = None
     ):
         async with self.async_ses() as session:
             params={
@@ -131,19 +132,29 @@ class CampaignsDBInterface(BaseInterface):
                     order_by = 'c.id'
                 case _:
                     order_by = 'c.id'
-            filters_str = ''
+            filters = []
             if campaign_id is not None:
-                filters_str += 'WHERE c.id=:campaign_id'
+                filters.append('c.id=:campaign_id')
                 params['campaign_id'] = campaign_id
             if is_active is not None:
-                filters_str += f'{'WHERE' if campaign_id is None else "AND"} c.is_active=:is_active'
+                filters.append(f'c.is_active=:is_active')
                 params['is_active'] = is_active
             if start_date is not None:
-                filters_str += f'{'WHERE' if campaign_id is None and is_active is None else "AND"} c.created_at>=:start_date'
+                filters.append('c.created_at>=:start_date')
                 params['start_date'] = start_date
             if end_date is not None:
-                filters_str += f'{'WHERE' if campaign_id is None and is_active is None and start_date is None else "AND"} c.created_at<=:end_date'
+                filters.append(f'c.created_at<=:end_date')
                 params['end_date'] = end_date
+            if name is not None:
+                filters.append(f"c.name ILIKE :name")
+                params['name'] = f"%{name}%"
+                
+            filters_str = ""
+            if filters:
+                filters_str = "WHERE " + " AND ".join(filters)
+                
+            logger.debug(filters_str)
+            logger.debug(params)
             result = await session.execute(
                 text(
                     f'''
