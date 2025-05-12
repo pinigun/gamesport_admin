@@ -3,12 +3,13 @@ from enum import Enum
 import os
 from typing import Any, Literal
 
-from sqlalchemy import CheckConstraint, ForeignKey, Interval, String, DateTime, Boolean, Integer, Float, True_
+from sqlalchemy import CheckConstraint, ForeignKey, Interval, String, DateTime, Boolean, Integer, Float, True_, text as text_
 from sqlalchemy.dialects.postgresql import BYTEA, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from config import DATE_FORMAT
 from custom_types import AdminStatuses, FAQStatuses
+
 
 class TypeEnum(str, Enum):
     FLOAT = 'float'
@@ -512,7 +513,7 @@ class Campaign(Base):
     button_url:         Mapped[str] = mapped_column(String, nullable=True)
     timer:              Mapped[timedelta] = mapped_column(Interval, nullable=True)
     shedulet_at:        Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    created_at:        Mapped[datetime] = mapped_column(DateTime, nullable=True, server_default=text("TIMEZONE('UTC', CURRENT_TIMESTAMP)"))
+    created_at:         Mapped[datetime] = mapped_column(DateTime, nullable=True, server_default=text_("TIMEZONE('UTC', CURRENT_TIMESTAMP)"))
     is_active:          Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     photo:              Mapped[str] = mapped_column(String, nullable=True)
     
