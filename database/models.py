@@ -512,6 +512,7 @@ class Campaign(Base):
     button_url:         Mapped[str] = mapped_column(String, nullable=True)
     timer:              Mapped[timedelta] = mapped_column(Interval, nullable=True)
     shedulet_at:        Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    created_at:        Mapped[datetime] = mapped_column(DateTime, nullable=True, server_default=text("TIMEZONE('UTC', CURRENT_TIMESTAMP)"))
     is_active:          Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     photo:              Mapped[str] = mapped_column(String, nullable=True)
     

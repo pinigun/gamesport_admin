@@ -23,6 +23,12 @@ router = APIRouter(
 async def get_campaigns(
     page: int = 1,
     per_page: int = 12,
+    campaign_id: int | None = None,
+    is_active: bool | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    order_by: Literal['id'] = "id",
+    order_direction: Literal['desc', 'asc'] = 'desc'
 ) -> CampaignsData:
     total_items = await CampaignTools.get_count()
     total_pages = math.ceil(total_items / per_page)
@@ -32,7 +38,16 @@ async def get_campaigns(
         total_items=total_items,
         per_page=per_page,
         current_page=page,
-        items = await CampaignTools.get_all(page, per_page) if total_pages else []
+        items = await CampaignTools.get_all(
+            page=page,
+            per_page=per_page,
+            order_by=order_by,
+            order_direction=order_direction,
+            campaign_id=campaign_id,
+            start_date=start_date,
+            end_date=end_date,
+            is_active=is_active
+        ) if total_pages else []
     )
 
     

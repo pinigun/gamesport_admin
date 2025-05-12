@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.db_interface import BaseInterface, text
 from database.exceptions import CampaignNotFoundException, CustomDBExceptions
 from database.models import Campaign, CampaignTrigger, CampaignTriggerLink
+from typing import Literal
 
 
 class CampaignsDBInterface(BaseInterface):
@@ -56,7 +57,7 @@ class CampaignsDBInterface(BaseInterface):
             raise CampaignNotFoundException(message=f'Campaign with (id={campaign_id}) is not found')
         except SQLAlchemyError as ex:
             raise CampaignNotFoundException(message=ex._message())
-        return result    
+        return result[0] if result is not None else None
             
     
     async def add(self, campaign_data: dict):
@@ -95,7 +96,7 @@ class CampaignsDBInterface(BaseInterface):
                 raise CampaignNotFoundException(message=f'Campaign with (id={campaign.id}) is not found')
             except SQLAlchemyError as ex:
                 raise CampaignNotFoundException(message=ex._message())
-        return result    
+        return result[0] if result is not None else None
 
 
     async def get_count(self):
@@ -112,18 +113,37 @@ class CampaignsDBInterface(BaseInterface):
         self,
         page: int =1,
         per_page: int = 10,
-        is_active: bool | None = None,
+        order_by: Literal['id'] = "id",
+        order_direction: Literal['desc', 'asc'] = 'desc',
         campaign_id: int | None = None,
+        is_active: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ):
         async with self.async_ses() as session:
             params={
                 "offset": (page-1)*per_page,
                 "limit": per_page
             }
-            if is_active is not None:
-                params['is_active'] = is_active
+
+            match order_by:
+                case 'id':
+                    order_by = 'c.id'
+                case _:
+                    order_by = 'c.id'
+            filters_str = ''
             if campaign_id is not None:
+                filters_str += 'WHERE c.id=:campaign_id'
                 params['campaign_id'] = campaign_id
+            if is_active is not None:
+                filters_str += f'{'WHERE' if campaign_id is None else "AND"} c.is_active=:is_active'
+                params['is_active'] = is_active
+            if start_date is not None:
+                filters_str += f'{'WHERE' if campaign_id is None and is_active is None else "AND"} c.created_at>=:start_date'
+                params['start_date'] = start_date
+            if end_date is not None:
+                filters_str += f'{'WHERE' if campaign_id is None and is_active is None and start_date is None else "AND"} c.created_at<=:end_date'
+                params['end_date'] = end_date
             result = await session.execute(
                 text(
                     f'''
@@ -140,8 +160,9 @@ class CampaignsDBInterface(BaseInterface):
                     FROM campaigns c
                     JOIN campaigns_triggers_link ctl ON ctl.campaign_id = c.id
                     JOIN campaigns_triggers t ON ctl.trigger_id = t.id 
-                    {f'WHERE c.is_active=:is_active' if is_active is not None else ''} {f'{'WHERE' if is_active is None else 'AND'} c.id=:campaign_id' if campaign_id is not None else ''}
+                    {filters_str}
                     GROUP BY c.id, c.name
+                    order by {order_by} {'desc' if order_direction == 'desc' else ''}
                     offset :offset
                     limit :limit
                     '''
@@ -149,7 +170,7 @@ class CampaignsDBInterface(BaseInterface):
                 params=params
             )
             
-        return result.mappings().all() if campaign_id is None else result.mappings().first()
+        return result.mappings().all()
         
     
     async def get_evryday_reward_users_pool(self) -> list[str]:

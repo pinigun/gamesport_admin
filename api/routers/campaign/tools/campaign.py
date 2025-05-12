@@ -13,10 +13,22 @@ class CampaignTools:
         return await db.campaigns.get_count()
     
     
-    async def get_all(page: int, per_page: int) -> list[CampaignResponse]:
+    async def get_all(
+        page: int,
+        per_page: int,
+        order_by: str,
+        order_direction: str,
+        **filters
+    ) -> list[CampaignResponse]:
         return [
             CampaignResponse.model_validate(campaign)
-            for campaign in await db.campaigns.get_all(page, per_page)
+            for campaign in await db.campaigns.get_all(
+                page=page,
+                per_page=per_page,
+                order_by=order_by,
+                order_direction=order_direction,
+                **filters
+            )
         ]
         
     
