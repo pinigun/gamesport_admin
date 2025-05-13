@@ -23,5 +23,6 @@ class CampaignDTO:
     photo:              str | None
     timer:              timedelta | None
     is_active:          bool
-    shedulet_at:        datetime
+    shedulet_at:        datetime | None
+    created_at:         datetime
     triggers:           list[TriggerDTO]
