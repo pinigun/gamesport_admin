@@ -4,7 +4,7 @@ from typing import Literal
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from config import BASE_ADMIN_URL
+from config import BASE_ADMIN_URL, FRONT_DATE_FORMAT, FRONT_TIME_FORMAT
 
 
 class Trigger(BaseModel):
@@ -51,6 +51,7 @@ class CampaignResponse(BaseModel):
     received:           int = 0
     is_active:          bool
     shedulet_at:        datetime | None
+    created_at:         datetime | None
     triggers:           list[TriggerWithParams]
     
     model_config = ConfigDict(from_attributes=True)
@@ -61,7 +62,13 @@ class CampaignResponse(BaseModel):
             value = f'{BASE_ADMIN_URL}/{value}'
         return value
     
-
+    @field_validator("created_at", mode='before')
+    def check_date(cls, value: str | datetime):
+        if isinstance(value, datetime):
+            return value.strftime(format=f"{FRONT_DATE_FORMAT} {FRONT_TIME_FORMAT}")
+        return value
+    
+    
 class CampaignsData(BaseModel):
     total_items:    int
     total_pages:    int
