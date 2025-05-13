@@ -99,8 +99,50 @@ class CampaignsDBInterface(BaseInterface):
         return result[0] if result is not None else None
 
 
-    async def get_count(self):
-        return await self.get_rows_count(Campaign)
+    async def get_count(
+        self,
+        campaign_id: int | None = None,
+        is_active: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        name: str | None = None,
+    ) -> int:
+        async with self.async_ses() as session:
+            params = {}
+            filters = []
+
+            if campaign_id is not None:
+                filters.append('c.id = :campaign_id')
+                params['campaign_id'] = campaign_id
+            if is_active is not None:
+                filters.append('c.is_active = :is_active')
+                params['is_active'] = is_active
+            if start_date is not None:
+                filters.append('c.shedulet_at >= :start_date')
+                params['start_date'] = start_date
+            if end_date is not None:
+                filters.append('c.shedulet_at <= :end_date')
+                params['end_date'] = end_date
+            if name is not None:
+                filters.append('c.name ILIKE :name')
+                params['name'] = f"%{name}%"
+
+            filters_str = ""
+            if filters:
+                filters_str = "WHERE " + " AND ".join(filters)
+
+            result = await session.execute(
+                text(
+                    f'''
+                    SELECT COUNT(DISTINCT c.id) as total
+                    FROM campaigns c
+                    {filters_str}
+                    '''
+                ),
+                params=params
+            )
+
+            return result.scalar_one()
     
     
     async def get_triggers(self):
@@ -155,29 +197,37 @@ class CampaignsDBInterface(BaseInterface):
                 
             logger.debug(filters_str)
             logger.debug(params)
+            query = f'''
+            SELECT 
+                c.*,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', t.id,
+                            'name', t.name,
+                            'cron_expression', t.cron_expression,
+                            'trigger_params', ctl.trigger_params
+                        )
+                    ) FILTER (
+                        WHERE t.id IS NOT NULL 
+                        OR t.name IS NOT NULL 
+                        OR t.cron_expression IS NOT NULL 
+                        OR ctl.trigger_params IS NOT NULL
+                    ),
+                    '[]'::json
+                ) AS triggers
+            FROM campaigns c
+            LEFT JOIN campaigns_triggers_link ctl ON ctl.campaign_id = c.id
+            LEFT JOIN campaigns_triggers t ON ctl.trigger_id = t.id 
+            {filters_str}
+            GROUP BY c.id, c.name
+            order by {order_by} {'desc' if order_direction == 'desc' else ''}
+            offset :offset
+            limit :limit
+            '''
+            logger.debug(query)
             result = await session.execute(
-                text(
-                    f'''
-                    SELECT 
-                        c.*,
-                        json_agg(
-                            json_build_object(
-                                'id', t.id,
-                                'name', t.name,
-                                'cron_expression', t.cron_expression,
-                                'trigger_params', ctl.trigger_params
-                            )
-                        ) AS triggers
-                    FROM campaigns c
-                    JOIN campaigns_triggers_link ctl ON ctl.campaign_id = c.id
-                    JOIN campaigns_triggers t ON ctl.trigger_id = t.id 
-                    {filters_str}
-                    GROUP BY c.id, c.name
-                    order by {order_by} {'desc' if order_direction == 'desc' else ''}
-                    offset :offset
-                    limit :limit
-                    '''
-                ),
+                text(query),
                 params=params
             )
             

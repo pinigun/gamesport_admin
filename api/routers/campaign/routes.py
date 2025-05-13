@@ -31,7 +31,14 @@ async def get_campaigns(
     order_by: Literal['id'] = "id",
     order_direction: Literal['desc', 'asc'] = 'desc'
 ) -> CampaignsData:
-    total_items = await CampaignTools.get_count()
+    total_items = await CampaignTools.get_count(
+        campaign_id=campaign_id,
+        start_date=start_date,
+        end_date=end_date,
+        is_active=is_active,
+        name=name,
+    )
+    logger.debug(f'{total_items=}')
     total_pages = math.ceil(total_items / per_page)
     
     return CampaignsData(

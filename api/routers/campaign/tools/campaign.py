@@ -9,8 +9,10 @@ class CampaignTools:
         await db.campaigns.delete(campaign_id)
     
     
-    async def get_count():
-        return await db.campaigns.get_count()
+    async def get_count(
+        **filters
+    ):
+        return await db.campaigns.get_count(**filters)
     
     
     async def get_all(
