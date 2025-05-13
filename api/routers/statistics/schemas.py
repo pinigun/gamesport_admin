@@ -40,6 +40,11 @@ class DailyStatistic(BaseModel):
     
 
 class StatisticData(BaseModel):
+    total_items:    int
+    total_pages:    int
+    per_page:       int
+    current_page:   int
+    
     data: dict[str, DailyStatistic] = Field(..., description='additionalProp* = Строка в формате "YYYY-MM-DD"')
     
     

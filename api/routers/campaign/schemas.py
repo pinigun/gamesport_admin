@@ -56,11 +56,13 @@ class CampaignResponse(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
     
+    
     @field_validator('photo', mode='before')
     def format_photo_url(cls, value):
         if value is not None:
             value = f'{BASE_ADMIN_URL}/{value}'
         return value
+    
     
     @field_validator("created_at", mode='before')
     def check_date(cls, value: str | datetime):

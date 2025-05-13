@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.routers.statistics.schemas import StatisticData, StatisticFilters
 from api.routers.statistics.tools.statistics import StatisticTools
@@ -14,6 +14,8 @@ router = APIRouter(
 
 @router.get('/')
 async def get_statistics(
+    page: int = Query(1, gt=0),
+    per_page: int = Query(10, gt=0),
     filters: StatisticFilters = Depends()
 ) -> StatisticData:
     for field in ("datetime_end", "datetime_start"):
@@ -34,4 +36,4 @@ async def get_statistics(
                     status_code=400,
                     detail=f'time data "{attr}" does not match format "{FRONT_DATE_FORMAT} {FRONT_TIME_FORMAT}"'
                 )
-    return await StatisticTools.get_all(filters)
+    return await StatisticTools.get_all(page=page, per_page=per_page, filters=filters)

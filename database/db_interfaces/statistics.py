@@ -48,11 +48,14 @@ class StatisticsDBInterface(BaseInterface):
             current += timedelta(days=1)
         return dates
 
+
     async def get_all_stats(
         self,
+        page:               int | None = 1,
+        per_page:           int | None = 10,
         min_balance:        Optional[int] = None,
         max_balance:        Optional[int] = None,
-        giveaway_id:         Optional[int] = None,
+        giveaway_id:        Optional[int] = None,
         task_id:            Optional[int] = None,
         gs_subscription:    Optional[Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']] = None,
         datetime_start:     Optional[datetime] = None,
@@ -303,10 +306,12 @@ class StatisticsDBInterface(BaseInterface):
                 .outerjoin(tasks_stmt, tasks_stmt.c.date == func.coalesce(registrations_stmt.c.date, tickets_stmt.c.date))
                 .outerjoin(giveaways_stats, giveaways_stats.c.date == func.coalesce(registrations_stmt.c.date, tickets_stmt.c.date))
                 .order_by(desc("date"))
+
             )
             
             logger.debug('Делаем запрос')
-            db_result = await session.execute(final_stmt)
+            db_result = await session.execute(final_stmt.offset((page-1)*per_page).limit(per_page))
+            total_items = await session.scalar(select(func.count()).select_from(final_stmt))
             logger.debug(db_result.mappings())
             result = dict()
             for row in db_result.mappings():
@@ -322,6 +327,6 @@ class StatisticsDBInterface(BaseInterface):
                 for key in row:
                     section_key, section_value_key = key.split('_', 1) 
                     result[date][section_key][section_value_key] = row[key]
-            
-            return result
+
+            return result, total_items
                     
