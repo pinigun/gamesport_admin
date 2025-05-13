@@ -182,10 +182,10 @@ class CampaignsDBInterface(BaseInterface):
                 filters.append(f'c.is_active=:is_active')
                 params['is_active'] = is_active
             if start_date is not None:
-                filters.append('c.created_at>=:start_date')
+                filters.append('c.shedulet_at>=:start_date')
                 params['start_date'] = start_date
             if end_date is not None:
-                filters.append(f'c.created_at<=:end_date')
+                filters.append(f'c.shedulet_at<=:end_date')
                 params['end_date'] = end_date
             if name is not None:
                 filters.append(f"c.name ILIKE :name")
