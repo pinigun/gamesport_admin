@@ -115,7 +115,10 @@ class UsersDBInterface(BaseInterface):
                 for key, value in another_filters.items():
                     attr = getattr(User, key, None)
                     if attr is not None:
-                        query = query.where(attr == value)
+                        if key == 'tg_id':
+                            query = query.where(or_(User.tg_id==value, User.username == value))
+                        else:
+                            query = query.where(attr == value)
 
             count_query = select(func.count()).select_from(query.subquery())
             result = await session.scalar(count_query)
