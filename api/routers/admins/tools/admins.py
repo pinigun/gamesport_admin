@@ -1,6 +1,6 @@
 import hashlib
 from database import db
-from api.routers.admins.schemas import AdminRequest, AdminResponse
+from api.routers.admins.schemas import AdminRequest, AdminResponse, EditAdminRequest
 
 
 class AdminsTools:
@@ -18,12 +18,15 @@ class AdminsTools:
     
     async def edit(
         admin_id:   int,
-        admin_data: AdminRequest,
+        admin_data: EditAdminRequest,
     ) -> AdminResponse:
+        admin_data = admin_data.model_dump(exclude_none=True)
+        if admin_data.get("password"):
+            admin_data['password'] = AdminsTools._hashpw(admin_data['password'])    
         return AdminResponse.model_validate(
             await db.admins.edit(
                 admin_id=admin_id,
-                admin_data=admin_data.model_dump()
+                **admin_data
             )
         )
     

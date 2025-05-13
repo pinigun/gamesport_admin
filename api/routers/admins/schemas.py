@@ -43,11 +43,12 @@ class AdminRequest(BaseModel):
     
     
 class EditAdminRequest(BaseModel):
-    first_name:     str
-    last_name:      str
+    first_name:     str | None = None
+    last_name:      str | None = None
     middle_name:    str | None = None
-    email:          str
-    phone_number:   str
+    email:          str | None = None
+    phone_number:   str | None = None
+    password:       str | None = None
     role_ids:       list[int]
     status:         AdminStatuses
     

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from loguru import logger
+
 from database.exceptions import AdminNotFound, PermissionsNotFound, RoleNotFound
 from database.db_interface import BaseInterface
 from sqlalchemy import and_, select
@@ -31,7 +33,7 @@ class AdminsDBInterface(BaseInterface):
         )
     
     
-    async def edit(self, admin_id: int, admin_data: dict):
+    async def edit(self, admin_id: int, **admin_data: dict):
         async with self.async_ses() as session:
             # Получаем роль и её текущие доступы
             result = await session.execute(
@@ -43,7 +45,8 @@ class AdminsDBInterface(BaseInterface):
             if not admin:
                 raise AdminNotFound
 
-            role_ids = admin_data.pop('role_ids')            
+            role_ids = admin_data.pop('role_ids')    
+            logger.debug(role_ids)        
             
             # Обновляем поля
             for key, value in admin_data.items():
@@ -57,13 +60,19 @@ class AdminsDBInterface(BaseInterface):
                 )
             )
             new_roles = result.scalars().all()
+            logger.debug(new_roles)
 
             # Обновляем связи
             admin.roles.clear()  # удаляем все старые связи
             admin.roles.extend(new_roles)  # добавляем новые
-
             await session.commit()
-            return admin
+            
+            admin = await session.execute(
+                select(Admin)
+                .where(Admin.id == admin_id)
+                .options(selectinload(Admin.roles))
+            )
+            return admin.scalar_one()
     
     
     async def delete(self, admin_id: int) -> Literal[True]:
