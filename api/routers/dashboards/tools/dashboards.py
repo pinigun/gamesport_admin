@@ -17,10 +17,10 @@ class DashboardsTools:
         new_value: int | float,
         old_value: int | float
     ) -> TrendData:
-        "-100.0 %"
+        fill_spaces_count = 8
         if old_value == 0:
             return TrendData(
-                trend_value="0.0 %".rjust(10) if new_value == old_value else "".rjust(10),
+                trend_value="0.0 %".rjust(fill_spaces_count) if new_value == old_value else "".rjust(fill_spaces_count),
                 trend_direction=True
             )
             
@@ -28,12 +28,12 @@ class DashboardsTools:
         
         if trend_value < 0:
             return TrendData(
-                trend_value=f'{trend_value} %'.rjust(10),
+                trend_value=f'{trend_value} %'.rjust(fill_spaces_count),
                 trend_direction=False
             )
         else:
             return TrendData(
-                trend_value=f'{trend_value} %'.rjust(10),
+                trend_value=f'{trend_value} %'.rjust(fill_spaces_count),
                 trend_direction=True
             )
 
