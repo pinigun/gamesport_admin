@@ -20,20 +20,19 @@ class DashboardsTools:
         fill_spaces_count = 8
         if old_value == 0:
             return TrendData(
-                trend_value="0.0 %".rjust(fill_spaces_count) if new_value == old_value else "".rjust(fill_spaces_count),
+                trend_value="+0.000 %",
                 trend_direction=True
             )
             
-        trend_value = round(((new_value - old_value) / old_value)*100, 1)
-        
+        trend_value = round(((new_value - old_value) / old_value)*100, 3)
         if trend_value < 0:
             return TrendData(
-                trend_value=f'{trend_value} %'.rjust(fill_spaces_count),
+                trend_value=f'{trend_value:.3f} %',
                 trend_direction=False
             )
         else:
             return TrendData(
-                trend_value=f'{trend_value} %'.rjust(fill_spaces_count),
+                trend_value=f'+{trend_value:.3f} %',
                 trend_direction=True
             )
 
