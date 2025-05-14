@@ -25,6 +25,11 @@ class AdminNotFound(CustomDBExceptions):
 class FAQNotFound(CustomDBExceptions):
     message: str = 'FAQ (id={faq_id}) not found'
     
+    
+@dataclass
+class DocsNotFound(CustomDBExceptions):
+    message: str = 'Docs (id={faq_id}) not found'
+    
 
 @dataclass
 class UserNotFound(CustomDBExceptions):

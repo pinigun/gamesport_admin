@@ -15,3 +15,7 @@ class AdminStatuses(str, Enum):
 class FAQStatuses(str, Enum):
     ACTIVE = 'active'
     INACTIVE = 'inactive' 
+    
+class DocsStatuses(str, Enum):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive' 

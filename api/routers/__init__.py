@@ -9,6 +9,7 @@ from .giveaways.routes import router as giveaways_router
 from .statistics.routes import router as statistics_router
 from .dashboards.routes import router as dashboards_router
 from .campaign.routes import router as campaign_router
+from .docs.routes import router as docs_router
 
 api_router = APIRouter()
 
@@ -21,3 +22,4 @@ api_router.include_router(giveaways_router)
 api_router.include_router(tasks_router)
 api_router.include_router(faq_router)
 api_router.include_router(campaign_router)
+api_router.include_router(docs_router)

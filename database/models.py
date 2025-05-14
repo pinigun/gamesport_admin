@@ -548,3 +548,12 @@ class CampaignTriggerLink(Base):
     trigger_id: Mapped[int] = mapped_column(Integer, ForeignKey("campaigns_triggers.id", ondelete='CASCADE'))
     trigger_params: Mapped[dict] = mapped_column(JSONB, nullable=True)
     
+
+class DocAndRule(Base):
+    __tablename__ = 'docs_and_rules'
+    
+    id:         Mapped[int] = mapped_column(Integer, primary_key=True)
+    name:       Mapped[str] = mapped_column(String, nullable=False)
+    text:       Mapped[str] = mapped_column(String, nullable=False)
+    status:     Mapped[Literal['inactive', 'active']] = mapped_column(String, nullable=False)
+    position:   Mapped[int] = mapped_column(Integer, nullable=False, default=1)
