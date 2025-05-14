@@ -101,7 +101,7 @@ class DashboardsDBInterface(BaseInterface):
             ),
             repeated_users as (
                 SELECT ds.day, 
-                    COALESCE(COUNT(DISTINCT u.user_id), 0) AS user_count
+                    COALESCE(COUNT(DISTINCT u.user_id), 0) AS users_count
                 FROM dates ds
                 LEFT JOIN repeated_users_subq u ON ds.day = u.day
                 GROUP BY ds.day

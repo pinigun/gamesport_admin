@@ -112,7 +112,7 @@ class DashboardsTools:
             end=end,
             preset=preset
         )
-        
+        logger.debug(users_graph)
         result = dict()
         if users_graph:
             result[users_graph[0]['day']] = StatsParam(
