@@ -45,7 +45,7 @@ class UserResponse(BaseModel):
             
             # Вычисление days_in_project
             days_in_project = (datetime.now() - created_at).days
-            
+            values["created_at"] = datetime.strftime(created_at, f'{FRONT_DATE_FORMAT} {FRONT_TIME_FORMAT}')
             values['days_in_project'] = days_in_project
         
         return values
