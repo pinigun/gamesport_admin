@@ -17,22 +17,22 @@ class DashboardsTools:
         new_value: int | float,
         old_value: int | float
     ) -> TrendData:
-        fill_spaces_count = 8
+        decimal_places = 2
         if old_value == 0:
             return TrendData(
-                trend_value="+0.000 %",
+                trend_value=f"+{0.0:.{decimal_places}f} %",
                 trend_direction=True
             )
             
         trend_value = round(((new_value - old_value) / old_value)*100, 3)
         if trend_value < 0:
             return TrendData(
-                trend_value=f'{trend_value:.3f} %',
+                trend_value=f'{trend_value:.{decimal_places}f} %',
                 trend_direction=False
             )
         else:
             return TrendData(
-                trend_value=f'+{trend_value:.3f} %',
+                trend_value=f'+{trend_value:.{decimal_places}f} %',
                 trend_direction=True
             )
 
