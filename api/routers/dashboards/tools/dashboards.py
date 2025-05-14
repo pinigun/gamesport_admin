@@ -17,22 +17,23 @@ class DashboardsTools:
         new_value: int | float,
         old_value: int | float
     ) -> TrendData:
+        "-100.0 %"
         if old_value == 0:
             return TrendData(
-                trend_value="0.00 %" if new_value == old_value else "∞ %",
+                trend_value="0.0 %".rjust(10) if new_value == old_value else "".rjust(10),
                 trend_direction=True
             )
             
-        trend_value = round(((new_value - old_value) / old_value)*100, 2)
+        trend_value = round(((new_value - old_value) / old_value)*100, 1)
         
         if trend_value < 0:
             return TrendData(
-                trend_value=f'{trend_value} %',
+                trend_value=f'{trend_value} %'.rjust(10),
                 trend_direction=False
             )
         else:
             return TrendData(
-                trend_value=f'{trend_value} %',
+                trend_value=f'{trend_value} %'.rjust(10),
                 trend_direction=True
             )
 
