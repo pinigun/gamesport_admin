@@ -6,7 +6,7 @@ from datetime import timedelta
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql.functions import coalesce
 from database.models import FAQ, Giveaway, GiveawayEnded, GiveawayParticipant, TaskTemplate, User, UserBalanceHistory, UserSubscription, UserTaskComplete, UserTaskParticipant, UsersStatistic, datetime
-from sqlalchemy import Date, and_, cast, desc, distinct, func, select, text
+from sqlalchemy import Date, and_, asc, cast, desc, distinct, func, select, text
 from database.db_interface import BaseInterface
 from loguru import logger
 
@@ -60,6 +60,8 @@ class StatisticsDBInterface(BaseInterface):
         gs_subscription:    Optional[Literal['FULL', 'PRO', 'LITE', 'UNSUBSCRIBED']] = None,
         datetime_start:     Optional[datetime] = None,
         datetime_end:       Optional[datetime] = None,
+        order_by:           Literal['date'] = 'date',
+        order_direction:    Literal['desc', 'asc'] = 'desc',
     ):
         async with self.async_ses() as session:
             # Фильтры
@@ -266,6 +268,12 @@ class StatisticsDBInterface(BaseInterface):
                 .outerjoin(previous_participants_subq, giveaways_participants_subq.c.giveaway_id == previous_participants_subq.c.giveaway_id)
                 .group_by(cast(giveaways_participants_subq.c.created_at, Date))
             ).subquery("giveaways_stats")
+            
+            # Назначаем order_by
+            match order_by:
+                case _:
+                    order_by="date"
+            
             # Объединяем сабквери в финальном запросе
             final_stmt = (
                 select(
@@ -305,7 +313,7 @@ class StatisticsDBInterface(BaseInterface):
                 )
                 .outerjoin(tasks_stmt, tasks_stmt.c.date == func.coalesce(registrations_stmt.c.date, tickets_stmt.c.date))
                 .outerjoin(giveaways_stats, giveaways_stats.c.date == func.coalesce(registrations_stmt.c.date, tickets_stmt.c.date))
-                .order_by(desc("date"))
+                .order_by(desc(order_by) if order_direction == 'desc' else asc(order_by))
 
             )
             
