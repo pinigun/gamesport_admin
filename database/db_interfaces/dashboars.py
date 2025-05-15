@@ -369,12 +369,18 @@ class DashboardsDBInterface(BaseInterface):
         ############ Билеты
         tickets_stmt = (
             select(
-                func.sum(UserBalanceHistory.amount)
+                func.coalesce(
+                    func.sum(UserBalanceHistory.amount)
                     .filter(UserBalanceHistory.type == 'IN')
-                    .label("tickets_received"),
-                func.sum(UserBalanceHistory.amount)
+                    ,
+                    0
+                ).label("tickets_received"),
+                func.coalesce(
+                    func.sum(UserBalanceHistory.amount)
                     .filter(UserBalanceHistory.type == 'OUT')
-                    .label("tickets_spent")
+                    ,
+                    0
+                ).label("tickets_spent")
             )
             .select_from(UserBalanceHistory)
             .where(UserBalanceHistory.created_at.between(start_date, end_date))

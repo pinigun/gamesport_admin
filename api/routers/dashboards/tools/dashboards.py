@@ -74,7 +74,7 @@ class DashboardsTools:
                     # Считаем тренд
                     period[section_key][section_value_key] = {
                         "value": value,
-                        'trend': DashboardsTools._get_stat_trend(value, prev_value)
+                        'trend': DashboardsTools._get_stat_trend(float(value), float(prev_value))
                     }
                 
         return GeneralStats(**period)
