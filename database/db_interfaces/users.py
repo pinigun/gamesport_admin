@@ -38,7 +38,7 @@ class UsersDBInterface(BaseInterface):
         created_at_end: datetime = None,
         min_balance: int | None = None,
         max_balance: int | None = None,
-        giveway_id: int | None = None,
+        giveaway_id: int | None = None,
         gs_subscription: Literal["FULL", "LITE", "PRO", "UNSUBSCRIBED"] | None = None,
         **another_filters
     ) -> int:
@@ -107,8 +107,8 @@ class UsersDBInterface(BaseInterface):
                 query = query.having(and_(*having_conditions))
 
             # Фильтр по giveaway_id
-            if giveway_id is not None:
-                query = query.where(GiveawayParticipant.giveaway_id == giveway_id)
+            if giveaway_id is not None:
+                query = query.where(GiveawayParticipant.giveaway_id == giveaway_id)
 
             # Фильтры по другим полям
             if another_filters:
@@ -243,7 +243,7 @@ class UsersDBInterface(BaseInterface):
         created_at_end:     datetime = None,
         min_balance:        int | None = None,
         max_balance:        int | None = None,
-        giveway_id:         int | None = None,
+        giveaway_id:         int | None = None,
         task_id:            int | None = None,
         gs_subscription:    Literal["FULL", "LITE", "PRO", "UNSUBSCRIBED"] | None = None,
         **another_filters
@@ -417,12 +417,12 @@ class UsersDBInterface(BaseInterface):
 
             #     query = query.where(exists(subq))
             
-            if giveway_id is not None:
+            if giveaway_id is not None:
                 query = query.outerjoin(
                     GiveawayParticipant,
                     and_(
                         GiveawayParticipant.user_id == User.id,
-                        GiveawayParticipant.giveaway_id == giveway_id
+                        GiveawayParticipant.giveaway_id == giveaway_id
                     )
                 ).where(GiveawayParticipant.id.is_not(None))
             else:
