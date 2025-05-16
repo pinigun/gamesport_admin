@@ -311,9 +311,11 @@ class GiveawaysDBInterface(BaseInterface):
             # Формируем базовый запрос
             query = '''
                     WITH giveaways_participants_count AS (
-                        SELECT giveaway_id, COUNT(*) AS participants_count
-                        FROM giveaways_participant
-                        GROUP BY giveaway_id
+                        SELECT 
+                            gp.giveaway_id,
+                            COUNT(DISTINCT(gp.user_id)) AS participants_count
+                        FROM giveaways_participant gp
+                        GROUP BY gp.giveaway_id
                     ),
                     last_winners AS (
                         SELECT DISTINCT ON (ge.giveaway_id)
@@ -370,7 +372,7 @@ class GiveawaysDBInterface(BaseInterface):
             # Выполняем запрос
             result = await session.execute(text(query), params)
 
-            # Если giveaway_id указан, возвращаем только один элемент
+            # Если giveaway_id указан, возвращаем только один элемент + призы
             if giveaway_id:
                 result = dict(result.mappings().first())  
                 # Запрашиваем призы для конкретного конкурса
