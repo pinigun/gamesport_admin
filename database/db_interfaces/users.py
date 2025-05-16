@@ -331,7 +331,7 @@ class UsersDBInterface(BaseInterface):
                 )
                 .outerjoin(UserBalanceHistory, User.id == UserBalanceHistory.user_id)
                 .outerjoin(UserSubscription, User.id == UserSubscription.user_id)
-                .outerjoin(GiveawayParticipant, User.id == GiveawayParticipant.user_id)
+                # .outerjoin(GiveawayParticipant, User.id == GiveawayParticipant.user_id)
                 .outerjoin(
                     referals_count_subquery,  # Явное соединение с подзапросом referals_count_subquery
                     referals_count_subquery.c.referrer_id == User.id
@@ -402,20 +402,32 @@ class UsersDBInterface(BaseInterface):
                             (UserSubscription.lite.is_(None) & UserSubscription.pro.is_(None))
                         )
 
-            if giveway_id is not None:
-                subq = (
-                    select(1)
-                    .select_from(GiveawayParticipant)
-                    .where(
-                        and_(
-                            GiveawayParticipant.user_id == User.id,
-                            GiveawayParticipant.giveaway_id == giveway_id
-                        )
-                    )
-                    .correlate(User)
-                )
+            # if giveway_id is not None:
+            #     subq = (
+            #         select(1)
+            #         .select_from(GiveawayParticipant)
+            #         .where(
+            #             and_(
+            #                 GiveawayParticipant.user_id == User.id,
+            #                 GiveawayParticipant.giveaway_id == giveway_id
+            #             )
+            #         )
+            #         .correlate(User)
+            #     )
 
-                query = query.where(exists(subq))
+            #     query = query.where(exists(subq))
+            
+            if giveway_id is not None:
+                query = query.outerjoin(
+                    GiveawayParticipant,
+                    and_(
+                        GiveawayParticipant.user_id == User.id,
+                        GiveawayParticipant.giveaway_id == giveway_id
+                    )
+                ).where(GiveawayParticipant.id.is_not(None))
+            else:
+                query = query.outerjoin(GiveawayParticipant, GiveawayParticipant.user_id == User.id)
+
 
             if another_filters:
                 for key, value in another_filters.items():
