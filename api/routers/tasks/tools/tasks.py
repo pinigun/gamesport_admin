@@ -41,11 +41,6 @@ class TasksTools:
     ) -> Task:
         photo = new_task_data.pop('photo', None)
         
-        new_task_data['active'] = new_task_data.pop('is_active')
-        new_task_data['tickets'] = new_task_data.pop('reward')
-        new_task_data['big_descr'] = new_task_data.pop('description')
-        new_task_data['gift_giveaway_id'] = new_task_data.pop('giveaway_id')
-        new_task_data['timer_value'] = new_task_data.pop('timer')
         if new_task_data['timer_value']:
             hours, minutes, seconds = map(int, new_task_data.pop('timer_value').split(':'))
             new_task_data['timer_value'] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
